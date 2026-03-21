@@ -1,0 +1,215 @@
+from django.utils import timezone
+from django.db.models import Sum, Q
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+from apps.botops.models import BotAsset, Bot, Family, Broker, Transaction
+from .serializers import BotAssetSerializer, BotSerializer, FamilySerializer, BrokerSerializer
+from .permissions import IsSuperUser, IsSuperUserOrReadOnly
+
+class BotAssetViewSet(viewsets.ModelViewSet):
+    queryset = BotAsset.objects.all()
+    serializer_class = BotAssetSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
+
+    def get_queryset(self):
+        queryset = BotAsset.objects.all()
+        family_id = self.request.query_params.get('family')
+        bot_id = self.request.query_params.get('bot')
+        broker_id = self.request.query_params.get('broker')
+
+        if family_id and bot_id:
+            queryset = queryset.filter(bot__family_id=family_id, bot_id=bot_id)
+        elif family_id:
+            queryset = queryset.filter(bot__family_id=family_id)
+        elif bot_id:
+            queryset = queryset.filter(bot_id=bot_id)
+
+        if broker_id:
+            queryset = queryset.filter(broker_id=broker_id)
+
+        return queryset
+
+class BotViewSet(viewsets.ModelViewSet):
+    queryset = Bot.objects.all()
+    serializer_class = BotSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
+
+class FamilyViewSet(viewsets.ModelViewSet):
+    queryset = Family.objects.all()
+    serializer_class = FamilySerializer
+    permission_classes = [IsSuperUserOrReadOnly]
+
+class BrokerViewSet(viewsets.ModelViewSet):
+    queryset = Broker.objects.all()
+    serializer_class = BrokerSerializer
+    permission_classes = [IsSuperUserOrReadOnly]
+
+class BotAssetAggregatedView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        queryset = BotAsset.objects.all()
+        bot_id = request.query_params.get('bot')
+        broker_id = request.query_params.get('broker')
+        family_id = request.query_params.get('family')
+
+        if bot_id:
+            queryset = queryset.filter(bot_id=bot_id)
+        if broker_id:
+            queryset = queryset.filter(broker_id=broker_id)
+        if family_id:
+            queryset = queryset.filter(bot__family_id=family_id)
+
+        aggs = queryset.aggregate(
+            cap_to_add_sum=Sum('cap_to_add'),
+            cap_value_in_trade_sum=Sum('cap_value_in_trade'),
+            pnl_un_sum=Sum('pnl_un'),
+            PNL_sum=Sum('PNL'),
+            coms_sum=Sum('coms'),
+            trades_sum=Sum('trades'),
+            cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+            capAdded_sum=Sum('capAdded')
+        )
+
+        cap_to_add_sum = aggs['cap_to_add_sum'] or 0.0
+        capAdded_sum = aggs['capAdded_sum'] or 0.0
+
+        bot_ids = queryset.values_list('bot_id', flat=True).distinct()
+        bot_aggs = Bot.objects.filter(id__in=bot_ids).aggregate(
+            cap_no_asignado_sum=Sum('cap_no_asignado')
+        )
+        
+        cap_no_asignado_sum = bot_aggs['cap_no_asignado_sum'] or 0.0
+        total_capital_added = capAdded_sum + cap_no_asignado_sum
+
+        return Response({
+            'cap_to_add_sum': cap_to_add_sum,
+            'cap_value_in_trade_sum': aggs['cap_value_in_trade_sum'] or 0.0,
+            'pnl_un_sum': aggs['pnl_un_sum'] or 0.0,
+            'PNL_sum': aggs['PNL_sum'] or 0.0,
+            'coms_sum': aggs['coms_sum'] or 0.0,
+            'trades_sum': aggs['trades_sum'] or 0.0,
+            'cap_to_trade_sum': aggs['cap_to_trade_sum'] or 0.0,
+            'capAdded_sum': capAdded_sum,
+            'cap_no_asignado': cap_no_asignado_sum,
+            'total_capital_added': total_capital_added
+        })
+
+class AddCapitalToBotNoAsignView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def post(self, request):
+        bot_id = request.data.get('bot_id')
+        amount = float(request.data.get('amount', 0))
+        broker_id = request.data.get('broker_id')
+
+        try:
+            bot = Bot.objects.get(id=bot_id)
+        except Bot.DoesNotExist:
+            return Response({'error': 'Bot not found'}, status=404)
+
+        # "el previous capital_added debe ser calculado con esta operacion que creamos 
+        # en el view anterior 'total_capital_added = capAdded_sum + cap_no_asignado_sum' 
+        # haciendo el queryset sin filtros"
+        capAdded_sum = BotAsset.objects.aggregate(capAdded_sum=Sum('capAdded'))['capAdded_sum'] or 0.0
+        cap_no_asignado_sum = Bot.objects.aggregate(cap_no_asignado_sum=Sum('cap_no_asignado'))['cap_no_asignado_sum'] or 0.0
+        previous_capital_added = capAdded_sum + cap_no_asignado_sum
+
+        # Adicionara el amount a lo que ya hay en el bot en el campo cap_no_asignado
+        bot.cap_no_asignado += amount
+        bot.save()
+
+        # posterior_capital_added sumando a lo calculado el amount del body
+        posterior_capital_added = previous_capital_added + amount
+
+        # Creara un registro en el modelo Transaction de botops
+        Transaction.objects.create(
+            bot=bot,
+            assetbot=None,
+            capital=amount,
+            add_withdraw=1 if amount > 0 else 0, # El prompt dice: "si es positivo add_withdrwa 1"
+            previous_capital_added=previous_capital_added,
+            posterior_capital_added=posterior_capital_added,
+            broker_id=broker_id,
+            date=timezone.now().date()
+        )
+
+        return Response({
+            'message': 'Capital added successfully',
+            'bot_id': bot.id,
+            'new_cap_no_asignado': bot.cap_no_asignado,
+            'total_capital_added': posterior_capital_added
+        })
+
+class AddCapitalToAssetView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def post(self, request):
+        bot_asset_id = request.data.get('bot_asset_id')
+        amount = float(request.data.get('amount', 0))
+
+        try:
+            bot_asset = BotAsset.objects.select_related('bot', 'broker').get(id=bot_asset_id)
+        except BotAsset.DoesNotExist:
+            return Response({'error': 'BotAsset not found'}, status=404)
+
+        if bot_asset.cap_to_add + amount <= 0:
+            return Response({'error': 'Resulting cap_to_add must be greater than 0'}, status=400)
+
+        # "el previous capital_added debe ser calculado como en el view que creamos anteriormente"
+        capAdded_sum = BotAsset.objects.aggregate(capAdded_sum=Sum('capAdded'))['capAdded_sum'] or 0.0
+        cap_no_asignado_sum = Bot.objects.aggregate(cap_no_asignado_sum=Sum('cap_no_asignado'))['cap_no_asignado_sum'] or 0.0
+        previous_capital_added = capAdded_sum + cap_no_asignado_sum
+
+        # Adicionara el amount a el campo de cap_to_add del botAsset
+        bot_asset.cap_to_add += amount
+        bot_asset.capAdded += amount
+        bot_asset.save()
+
+        # posterior_capital_added sumando a lo calculado el amount del body
+        posterior_capital_added = previous_capital_added + amount
+
+        # Agrega un registro en el modelo Transaction de botops
+        Transaction.objects.create(
+            bot=bot_asset.bot,
+            assetbot=bot_asset,
+            capital=amount,
+            add_withdraw=1 if amount > 0 else 0,
+            previous_capital_added=previous_capital_added,
+            posterior_capital_added=posterior_capital_added,
+            broker=bot_asset.broker,
+            date=timezone.now().date()
+        )
+
+        return Response({
+            'message': 'Capital added to asset successfully',
+            'bot_asset_id': bot_asset.id,
+            'new_cap_to_add': bot_asset.cap_to_add,
+            'total_capital_added': posterior_capital_added
+        })
+
+class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        
+        if user:
+            if user.is_superuser:
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key})
+            else:
+                return Response({'error': 'Only superusers are allowed'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+class VerifyTokenView(APIView):
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        return Response({'message': 'Token is valid', 'user': request.user.username})
