@@ -66,6 +66,7 @@ INSTALLED_APPS= DJANGO_APPS + PROJECT_APPS  + THIRD_PARTY_APPS
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -134,29 +135,35 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = '/static/'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
-
-STATICFILES_DIRS = [
-]
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = os.getenv('TIME_ZONE', 'America/Bogota')
 USE_I18N = True
 USE_TZ = True
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Extra places for collectstatic to find static files.
+STATICFILES_DIRS = [
+    # BASE_DIR / "static", # Descomenta si tienes una carpeta static global
+]
+
+# Enable Whitenoise for static files compression and caching
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
