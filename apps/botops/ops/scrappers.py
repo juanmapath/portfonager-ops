@@ -425,12 +425,24 @@ def scrap_TradingView_metrics(ticker,market):
         url_quarter = f"https://www.tradingview.com/symbols/{market.upper()}-{ticker_symbol.upper()}/financials-income-statement/?statements-period=FQ"
 
         # Setup driver ONCE
-        chrome_options = Options()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        # Prioritize system-installed chromium/chromedriver
+        import shutil
+        system_chrome = shutil.which("chromium") or shutil.which("google-chrome")
+        system_chromedriver = shutil.which("chromedriver")
+
+        if system_chrome and system_chromedriver:
+            print(f"Using system Chromium ({system_chrome}) and Chromedriver ({system_chromedriver})")
+            chrome_options.binary_location = system_chrome
+            service = Service(executable_path=system_chromedriver)
+        else:
+            print("System Chrome not found, using ChromeDriverManager.")
+            service = Service(ChromeDriverManager().install())
+
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         wait = WebDriverWait(driver, 5)
         timeout = 20  # seconds
         start_time = time.time()
@@ -547,7 +559,17 @@ def scrap_TradingView_metrics(ticker,market):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
 
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+        import shutil
+        system_chrome = shutil.which("chromium") or shutil.which("google-chrome")
+        system_chromedriver = shutil.which("chromedriver")
+
+        if system_chrome and system_chromedriver:
+            chrome_options.binary_location = system_chrome
+            service = Service(executable_path=system_chromedriver)
+        else:
+            service = Service(ChromeDriverManager().install())
+
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         wait = WebDriverWait(driver, 5)
         timeout = 20  # seconds
         start_time = time.time()

@@ -2,13 +2,11 @@ providers = ["python"]
 
 [variables]
   NIXPACKS_PYTHON_VERSION = "3.12"
-  # Set environment variables commonly needed for headless Chrome
-  CHROME_BIN = "/usr/bin/chromium"
-  CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 
 [phases.setup]
   nixPkgs = ["...", "chromium", "chromedriver", "nss"]
+  aptPkgs = ["...", "libnss3", "libnspr4", "libatk1.0-0", "libatk-bridge2.0-0", "libcups2", "libdrm2", "libxkbcommon0", "libxcomposite1", "libxdamage1", "libxfixes3", "libxrandr2", "libgbm1", "libasound2", "libpango-1.0-0", "libcairo2"]
 
 [phases.install]
   cmds = ["python -m venv /opt/venv", ". /opt/venv/bin/activate", "pip install -r requirements.txt"]

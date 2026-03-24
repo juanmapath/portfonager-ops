@@ -71,7 +71,20 @@ def get_api_data_yf_native(symbol, tgmToken, tgm_id):
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    # Prioritize system-installed chromium/chromedriver (for Nixpacks/Coolify)
+    import shutil
+    system_chrome = shutil.which("chromium") or shutil.which("google-chrome")
+    system_chromedriver = shutil.which("chromedriver")
+
+    if system_chrome and system_chromedriver:
+        print(f"Using system Chromium ({system_chrome}) and Chromedriver ({system_chromedriver})")
+        options.binary_location = system_chrome
+        service = Service(executable_path=system_chromedriver)
+    else:
+        print("System Chrome not found, using ChromeDriverManager.")
+        service = Service(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(service=service, options=options)
     wait = WebDriverWait(driver, 5)
     timeout = 15  # seconds
     start_time = time.time()

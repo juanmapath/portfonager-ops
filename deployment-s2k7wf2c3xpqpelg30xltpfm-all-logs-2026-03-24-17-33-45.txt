@@ -1,0 +1,325 @@
+2026-Mar-24 16:25:21.374737 Docker 29.1.5 with BuildKit and Buildx detected on deployment server (localhost).
+2026-Mar-24 16:25:21.395948 Starting deployment of juanmapath/portfonager-ops:main to localhost.
+2026-Mar-24 16:25:21.733399 Preparing container with helper image: ghcr.io/coollabsio/coolify-helper:1.0.12
+2026-Mar-24 16:25:21.975538 [DEBUG] [CMD]: docker stop -t 30 s2k7wf2c3xpqpelg30xltpfm
+2026-Mar-24 16:25:21.975538 [DEBUG] Error response from daemon: No such container: s2k7wf2c3xpqpelg30xltpfm
+2026-Mar-24 16:25:22.267290 [DEBUG] [CMD]: docker run -d --network coolify --name s2k7wf2c3xpqpelg30xltpfm  --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/coollabsio/coolify-helper:1.0.12
+2026-Mar-24 16:25:22.267290 [DEBUG] d167c90d7a817dd0e33a458124f7174380fe2cf9f602fbe4a8ba4b5553f1e8be
+2026-Mar-24 16:25:23.595640 [DEBUG] [CMD]: docker exec s2k7wf2c3xpqpelg30xltpfm bash -c 'GIT_SSH_COMMAND="ssh -o ConnectTimeout=30 -p 22 -o Port=22 -o LogLevel=ERROR -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git ls-remote https://github.com/juanmapath/portfonager-ops refs/heads/main'
+2026-Mar-24 16:<REDACTED>@\(.*\):#https://\1/#g" '\''/artifacts/s2k7wf2c3xpqpelg30xltpfm'\''/.gitmodules || true && git submodule sync && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git submodule update --init --recursive --depth=1; fi && cd '\''/artifacts/s2k7wf2c3xpqpelg30xltpfm'\'' && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git lfs pull'
+2026-Mar-24 16:<REDACTED>@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+2026-Mar-24 16:25:32.035279 [DEBUG] #5 resolve ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de 0.1s done
+2026-Mar-24 16:25:32.035279 [DEBUG] #5 DONE 0.1s
+2026-Mar-24 16:25:32.035279 [DEBUG] 
+2026-Mar-24 16:25:32.035279 [DEBUG] #6 [stage-0  2/11] WORKDIR /app/
+2026-Mar-24 16:25:32.035279 [DEBUG] #6 CACHED
+2026-Mar-24 16:25:32.035279 [DEBUG] 
+2026-Mar-24 16:25:32.035279 [DEBUG] #7 [stage-0  3/11] COPY .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix
+2026-Mar-24 16:25:32.035279 [DEBUG] #7 CACHED
+2026-Mar-24 16:25:32.035279 [DEBUG] 
+2026-Mar-24 16:25:32.035279 [DEBUG] #8 [stage-0  4/11] RUN nix-env -if .nixpacks/nixpkgs-bc8f8d1be58e8c8383e683a06e1e1e57893fff87.nix && nix-collect-garbage -d
+2026-Mar-24 16:25:32.035279 [DEBUG] #8 CACHED
+2026-Mar-24 16:25:32.035279 [DEBUG] 
+2026-Mar-24 16:25:32.035279 [DEBUG] #9 [stage-0  5/11] RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends curl wget
+2026-Mar-24 16:25:32.398895 [DEBUG] #9 0.532 Get:1 http://archive.ubuntu.com/ubuntu noble InRelease [256 kB]
+2026-Mar-24 16:25:32.406923 [DEBUG] 
+2026-Mar-24 16:25:32.601979 [DEBUG] #9 0.534 Get:2 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-Mar-24 16:25:32.601979 [DEBUG] #9 0.575 Get:3 http://archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-Mar-24 16:25:32.601979 [DEBUG] #9 0.586 Get:4 http://archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-Mar-24 16:25:32.601979 [DEBUG] #9 0.730 Get:5 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [1949 kB]
+2026-Mar-24 16:25:32.722103 [DEBUG] #9 0.791 Get:6 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [3414 kB]
+2026-Mar-24 16:25:32.722103 [DEBUG] #9 0.855 Get:7 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Packages [34.8 kB]
+2026-Mar-24 16:25:32.879849 [DEBUG] #9 0.861 Get:8 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1263 kB]
+2026-Mar-24 16:25:32.916945 [DEBUG] #9 1.049 Get:9 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages [19.3 MB]
+2026-Mar-24 16:25:33.364925 [DEBUG] #9 1.497 Get:10 http://archive.ubuntu.com/ubuntu noble/restricted amd64 Packages [117 kB]
+2026-Mar-24 16:25:33.499134 [DEBUG] #9 1.506 Get:11 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages [1808 kB]
+2026-Mar-24 16:25:33.499134 [DEBUG] #9 1.543 Get:12 http://archive.ubuntu.com/ubuntu noble/multiverse amd64 Packages [331 kB]
+2026-Mar-24 16:25:33.499134 [DEBUG] #9 1.554 Get:13 http://archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [3585 kB]
+2026-Mar-24 16:25:33.499134 [DEBUG] #9 1.631 Get:14 http://archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [2033 kB]
+2026-Mar-24 16:25:33.600426 [DEBUG] #9 1.674 Get:15 http://archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Packages [38.1 kB]
+2026-Mar-24 16:25:33.600426 [DEBUG] #9 1.677 Get:16 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [2328 kB]
+2026-Mar-24 16:25:33.600426 [DEBUG] #9 1.734 Get:17 http://archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [49.5 kB]
+2026-Mar-24 16:25:33.760053 [DEBUG] #9 1.736 Get:18 http://archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [36.1 kB]
+2026-Mar-24 16:25:33.760053 [DEBUG] #9 1.741 Get:19 http://archive.ubuntu.com/ubuntu noble-backports/multiverse amd64 Packages [695 B]
+2026-Mar-24 16:25:35.890220 [DEBUG] #9 4.022 Fetched 36.9 MB in 4s (9721 kB/s)
+2026-Mar-24 16:25:35.890220 [DEBUG] #9 4.022 Reading package lists...
+2026-Mar-24 16:25:37.758113 [DEBUG] 
+2026-Mar-24 16:25:37.975274 [DEBUG] #9 5.956 Reading package lists...
+2026-Mar-24 16:25:39.460974 [DEBUG] 
+2026-Mar-24 16:25:39.643161 [DEBUG] #9 7.623 Building dependency tree...
+2026-Mar-24 16:25:39.859188 [DEBUG] 
+2026-Mar-24 16:25:39.871868 [DEBUG] #9 7.988 Reading state information...
+2026-Mar-24 16:25:40.010997 [DEBUG] 
+2026-Mar-24 16:25:40.496626 [DEBUG] #9 8.626 The following additional packages will be installed:
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.628   libcurl3t64-gnutls libcurl4t64
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.720 The following NEW packages will be installed:
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.720   wget
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.722 The following packages will be upgraded:
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.725   curl libcurl3t64-gnutls libcurl4t64
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.803 3 upgraded, 1 newly installed, 0 to remove and 46 not upgraded.
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.803 Need to get 1236 kB of archives.
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.803 After this operation, 938 kB of additional disk space will be used.
+2026-Mar-24 16:25:40.672088 [DEBUG] #9 8.803 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 wget amd64 1.21.4-1ubuntu4.1 [334 kB]
+2026-Mar-24 16:25:40.892309 [DEBUG] #9 8.854 Get:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 curl amd64 8.5.0-2ubuntu10.8 [227 kB]
+2026-Mar-24 16:25:40.892309 [DEBUG] #9 8.867 Get:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcurl4t64 amd64 8.5.0-2ubuntu10.8 [342 kB]
+2026-Mar-24 16:25:40.892309 [DEBUG] #9 8.873 Get:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libcurl3t64-gnutls amd64 8.5.0-2ubuntu10.8 [334 kB]
+2026-Mar-24 16:25:41.119009 [DEBUG] #9 9.252 debconf: delaying package configuration, since apt-utils is not installed
+2026-Mar-24 16:25:41.126091 [DEBUG] 
+2026-Mar-24 16:25:41.254280 [DEBUG] #9 9.327 Fetched 1236 kB in 0s (9997 kB/s)
+2026-Mar-24 16:25:41.254280 [DEBUG] #9 9.385 Selecting previously unselected package wget.
+2026-Mar-24 16:25:41.254280 [DEBUG] #9 9.385 (Reading database ...
+2026-Mar-24 16:25:41.407121 [DEBUG] (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 9511 files and directories currently installed.)
+2026-Mar-24 16:25:41.407121 [DEBUG] #9 9.449 Preparing to unpack .../wget_1.21.4-1ubuntu4.1_amd64.deb ...
+2026-Mar-24 16:25:41.407121 [DEBUG] #9 9.453 Unpacking wget (1.21.4-1ubuntu4.1) ...
+2026-Mar-24 16:25:41.407121 [DEBUG] #9 9.539 Preparing to unpack .../curl_8.5.0-2ubuntu10.8_amd64.deb ...
+2026-Mar-24 16:25:41.514477 [DEBUG] #9 9.553 Unpacking curl (8.5.0-2ubuntu10.8) over (8.5.0-2ubuntu10.6) ...
+2026-Mar-24 16:25:41.514477 [DEBUG] #9 9.633 Preparing to unpack .../libcurl4t64_8.5.0-2ubuntu10.8_amd64.deb ...
+2026-Mar-24 16:25:41.514477 [DEBUG] #9 9.645 Unpacking libcurl4t64:amd64 (8.5.0-2ubuntu10.8) over (8.5.0-2ubuntu10.6) ...
+2026-Mar-24 16:25:41.615154 [DEBUG] #9 9.739 Preparing to unpack .../libcurl3t64-gnutls_8.5.0-2ubuntu10.8_amd64.deb ...
+2026-Mar-24 16:25:41.615154 [DEBUG] #9 9.746 Unpacking libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.8) over (8.5.0-2ubuntu10.6) ...
+2026-Mar-24 16:25:41.717007 [DEBUG] #9 9.838 Setting up wget (1.21.4-1ubuntu4.1) ...
+2026-Mar-24 16:25:41.717007 [DEBUG] #9 9.849 Setting up libcurl4t64:amd64 (8.5.0-2ubuntu10.8) ...
+2026-Mar-24 16:25:41.895144 [DEBUG] #9 9.856 Setting up libcurl3t64-gnutls:amd64 (8.5.0-2ubuntu10.8) ...
+2026-Mar-24 16:25:41.895144 [DEBUG] #9 9.864 Setting up curl (8.5.0-2ubuntu10.8) ...
+2026-Mar-24 16:25:41.895144 [DEBUG] #9 9.876 Processing triggers for libc-bin (2.39-0ubuntu8.4) ...
+2026-Mar-24 16:25:41.984712 [DEBUG] #9 DONE 10.1s
+2026-Mar-24 16:25:42.114052 [DEBUG] #10 [stage-0  6/11] COPY . /app/.
+2026-Mar-24 16:25:42.114052 [DEBUG] #10 DONE 0.1s
+2026-Mar-24 16:25:42.265919 [DEBUG] #11 [stage-0  7/11] RUN --mount=type=cache,id=suo52p6enr1962yo55b694ze-/root/cache/pip,target=/root/.cache/pip python -m venv /opt/venv
+2026-Mar-24 16:25:47.640695 [DEBUG] #11 DONE 5.5s
+2026-Mar-24 16:25:47.799099 [DEBUG] #12 [stage-0  8/11] RUN --mount=type=cache,id=suo52p6enr1962yo55b694ze-/root/cache/pip,target=/root/.cache/pip . /opt/venv/bin/activate
+2026-Mar-24 16:25:47.820414 [DEBUG] #12 DONE 0.2s
+2026-Mar-24 16:25:47.971557 [DEBUG] #13 [stage-0  9/11] RUN --mount=type=cache,id=suo52p6enr1962yo55b694ze-/root/cache/pip,target=/root/.cache/pip pip install -r requirements.txt
+2026-Mar-24 16:25:48.991366 [DEBUG] #13 1.170 Collecting Django==5.1.7 (from -r requirements.txt (line 2))
+2026-Mar-24 16:25:49.164122 [DEBUG] #13 1.232   Downloading Django-5.1.7-py3-none-any.whl.metadata (4.1 kB)
+2026-Mar-24 16:25:49.164122 [DEBUG] #13 1.342 Collecting djangorestframework==3.15.2 (from -r requirements.txt (line 3))
+2026-Mar-24 16:25:49.294047 [DEBUG] #13 1.357   Downloading djangorestframework-3.15.2-py3-none-any.whl.metadata (10 kB)
+2026-Mar-24 16:25:49.294047 [DEBUG] #13 1.420 Collecting django-cors-headers==4.7.0 (from -r requirements.txt (line 4))
+2026-Mar-24 16:25:49.294047 [DEBUG] #13 1.433   Downloading django_cors_headers-4.7.0-py3-none-any.whl.metadata (16 kB)
+2026-Mar-24 16:25:49.294047 [DEBUG] #13 1.473 Collecting django-q2==1.9.0 (from -r requirements.txt (line 5))
+2026-Mar-24 16:25:49.473420 [DEBUG] #13 1.486   Downloading django_q2-1.9.0-py3-none-any.whl.metadata (9.6 kB)
+2026-Mar-24 16:25:49.473420 [DEBUG] #13 1.539 Collecting python-dotenv==1.0.1 (from -r requirements.txt (line 6))
+2026-Mar-24 16:25:49.473420 [DEBUG] #13 1.550   Downloading python_dotenv-1.0.1-py3-none-any.whl.metadata (23 kB)
+2026-Mar-24 16:25:49.473420 [DEBUG] #13 1.652 Collecting gunicorn==21.2.0 (from -r requirements.txt (line 7))
+2026-Mar-24 16:25:49.645355 [DEBUG] #13 1.663   Downloading gunicorn-21.2.0-py3-none-any.whl.metadata (4.1 kB)
+2026-Mar-24 16:25:49.645355 [DEBUG] #13 1.728 Collecting whitenoise==6.6.0 (from -r requirements.txt (line 8))
+2026-Mar-24 16:25:49.645355 [DEBUG] #13 1.744   Downloading whitenoise-6.6.0-py3-none-any.whl.metadata (3.7 kB)
+2026-Mar-24 16:25:49.645355 [DEBUG] #13 1.823 Collecting certifi==2025.1.31 (from -r requirements.txt (line 12))
+2026-Mar-24 16:25:49.808157 [DEBUG] #13 1.836   Downloading certifi-2025.1.31-py3-none-any.whl.metadata (2.5 kB)
+2026-Mar-24 16:25:49.890188 [DEBUG] #13 2.069 Collecting charset-normalizer==3.4.1 (from -r requirements.txt (line 13))
+2026-Mar-24 16:25:50.053190 [DEBUG] #13 2.080   Downloading charset_normalizer-3.4.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (35 kB)
+2026-Mar-24 16:25:50.071143 [DEBUG] #13 2.249 Collecting croniter==5.0.1 (from -r requirements.txt (line 14))
+2026-Mar-24 16:25:50.192379 [DEBUG] #13 2.270   Downloading croniter-5.0.1-py2.py3-none-any.whl.metadata (30 kB)
+2026-Mar-24 16:25:50.192379 [DEBUG] #13 2.371 Collecting filelock==3.17.0 (from -r requirements.txt (line 15))
+2026-Mar-24 16:25:50.407436 [DEBUG] #13 2.385   Downloading filelock-3.17.0-py3-none-any.whl.metadata (2.9 kB)
+2026-Mar-24 16:25:50.407436 [DEBUG] #13 2.424 Collecting idna==3.10 (from -r requirements.txt (line 16))
+2026-Mar-24 16:25:50.407436 [DEBUG] #13 2.435   Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+2026-Mar-24 16:25:50.417106 [DEBUG] #13 2.597 Collecting narwhals==1.30.0 (from -r requirements.txt (line 17))
+2026-Mar-24 16:25:50.580894 [DEBUG] #13 2.607   Downloading narwhals-1.30.0-py3-none-any.whl.metadata (11 kB)
+2026-Mar-24 16:25:50.951441 [DEBUG] #13 3.130 Collecting numpy==2.2.3 (from -r requirements.txt (line 18))
+2026-Mar-24 16:25:51.060816 [DEBUG] #13 3.143   Downloading numpy-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+2026-Mar-24 16:25:51.060816 [DEBUG] #13 3.238 Collecting packaging==24.2 (from -r requirements.txt (line 19))
+2026-Mar-24 16:25:51.222247 [DEBUG] #13 3.250   Downloading packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
+2026-Mar-24 16:25:51.472862 [DEBUG] #13 3.651 Collecting pandas==2.2.3 (from -r requirements.txt (line 20))
+2026-Mar-24 16:25:51.598155 [DEBUG] #13 3.665   Downloading pandas-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (89 kB)
+2026-Mar-24 16:25:51.598155 [DEBUG] #13 3.776 Collecting patsy==1.0.1 (from -r requirements.txt (line 21))
+2026-Mar-24 16:25:51.747772 [DEBUG] #13 3.793   Downloading patsy-1.0.1-py2.py3-none-any.whl.metadata (3.3 kB)
+2026-Mar-24 16:25:51.747772 [DEBUG] #13 3.926 Collecting plotly==6.0.0 (from -r requirements.txt (line 22))
+2026-Mar-24 16:25:51.946700 [DEBUG] #13 3.947   Downloading plotly-6.0.0-py3-none-any.whl.metadata (5.6 kB)
+2026-Mar-24 16:25:51.946700 [DEBUG] #13 4.007 Collecting python-dateutil==2.9.0.post0 (from -r requirements.txt (line 23))
+2026-Mar-24 16:25:51.946700 [DEBUG] #13 4.017   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+2026-Mar-24 16:25:51.946700 [DEBUG] #13 4.125 Collecting pytz==2025.1 (from -r requirements.txt (line 24))
+2026-Mar-24 16:25:52.072285 [DEBUG] #13 4.138   Downloading pytz-2025.1-py2.py3-none-any.whl.metadata (22 kB)
+2026-Mar-24 16:25:52.072285 [DEBUG] #13 4.250 Collecting requests==2.32.3 (from -r requirements.txt (line 25))
+2026-Mar-24 16:25:52.235279 [DEBUG] #13 4.262   Downloading requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+2026-Mar-24 16:25:52.508987 [DEBUG] #13 4.688 Collecting scipy==1.15.2 (from -r requirements.txt (line 26))
+2026-Mar-24 16:25:52.739962 [DEBUG] #13 4.700   Downloading scipy-1.15.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+2026-Mar-24 16:25:52.739962 [DEBUG] #13 4.761 Collecting six==1.17.0 (from -r requirements.txt (line 27))
+2026-Mar-24 16:25:52.739962 [DEBUG] #13 4.772   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+2026-Mar-24 16:25:52.739962 [DEBUG] #13 4.920 Collecting statsmodels==0.14.4 (from -r requirements.txt (line 28))
+2026-Mar-24 16:25:52.944849 [DEBUG] #13 4.935   Downloading statsmodels-0.14.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.2 kB)
+2026-Mar-24 16:25:52.944849 [DEBUG] #13 4.982 Collecting tzdata==2025.1 (from -r requirements.txt (line 29))
+2026-Mar-24 16:25:52.944849 [DEBUG] #13 4.997   Downloading tzdata-2025.1-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-Mar-24 16:25:52.944849 [DEBUG] #13 5.124 Collecting urllib3==2.3.0 (from -r requirements.txt (line 30))
+2026-Mar-24 16:25:53.135393 [DEBUG] #13 5.138   Downloading urllib3-2.3.0-py3-none-any.whl.metadata (6.5 kB)
+2026-Mar-24 16:25:53.145915 [DEBUG] #13 5.209 Collecting yfinance>=0.2.54 (from -r requirements.txt (line 31))
+2026-Mar-24 16:25:53.145915 [DEBUG] #13 5.221   Downloading yfinance-1.2.0-py2.py3-none-any.whl.metadata (6.1 kB)
+2026-Mar-24 16:25:53.145915 [DEBUG] #13 5.314 Collecting selenium==4.29.0 (from -r requirements.txt (line 34))
+2026-Mar-24 16:25:53.254150 [DEBUG] #13 5.326   Downloading selenium-4.29.0-py3-none-any.whl.metadata (7.1 kB)
+2026-Mar-24 16:25:53.254150 [DEBUG] #13 5.366 Collecting beautifulsoup4==4.13.3 (from -r requirements.txt (line 35))
+2026-Mar-24 16:25:53.254150 [DEBUG] #13 5.378   Downloading beautifulsoup4-4.13.3-py3-none-any.whl.metadata (3.8 kB)
+2026-Mar-24 16:25:53.254150 [DEBUG] #13 5.433 Collecting webdriver-manager==4.0.2 (from -r requirements.txt (line 36))
+2026-Mar-24 16:25:53.415921 [DEBUG] #13 5.444   Downloading webdriver_manager-4.0.2-py2.py3-none-any.whl.metadata (12 kB)
+2026-Mar-24 16:25:53.425365 [DEBUG] 
+2026-Mar-24 16:25:53.893334 [DEBUG] #13 6.071 Collecting lxml==5.3.1 (from -r requirements.txt (line 37))
+2026-Mar-24 16:25:54.015080 [DEBUG] #13 6.083   Downloading lxml-5.3.1-cp312-cp312-manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+2026-Mar-24 16:25:54.015080 [DEBUG] #13 6.170 Collecting asgiref<4,>=3.8.1 (from Django==5.1.7->-r requirements.txt (line 2))
+2026-Mar-24 16:25:54.015080 [DEBUG] #13 6.184   Downloading asgiref-3.11.1-py3-none-any.whl.metadata (9.3 kB)
+2026-Mar-24 16:25:54.208723 [DEBUG] #13 6.224 Collecting sqlparse>=0.3.1 (from Django==5.1.7->-r requirements.txt (line 2))
+2026-Mar-24 16:25:54.208723 [DEBUG] #13 6.237   Downloading sqlparse-0.5.5-py3-none-any.whl.metadata (4.7 kB)
+2026-Mar-24 16:25:54.300967 [DEBUG] #13 6.479 Collecting django-picklefield<4.0,>=3.1 (from django-q2==1.9.0->-r requirements.txt (line 5))
+2026-Mar-24 16:25:54.470662 [DEBUG] #13 6.499   Downloading django_picklefield-3.4.0-py3-none-any.whl.metadata (13 kB)
+2026-Mar-24 16:25:54.706026 [DEBUG] #13 6.885 Collecting trio~=0.17 (from selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:25:54.868797 [DEBUG] #13 6.896   Downloading trio-0.33.0-py3-none-any.whl.metadata (8.5 kB)
+2026-Mar-24 16:25:54.868797 [DEBUG] #13 6.937 Collecting trio-websocket~=0.9 (from selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:25:54.868797 [DEBUG] #13 6.951   Downloading trio_websocket-0.12.2-py3-none-any.whl.metadata (5.1 kB)
+2026-Mar-24 16:25:54.868797 [DEBUG] #13 7.048 Collecting typing_extensions~=4.9 (from selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:25:55.005290 [DEBUG] #13 7.058   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+2026-Mar-24 16:25:55.005290 [DEBUG] #13 7.125 Collecting websocket-client~=1.8 (from selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:25:55.005290 [DEBUG] #13 7.136   Downloading websocket_client-1.9.0-py3-none-any.whl.metadata (8.3 kB)
+2026-Mar-24 16:25:55.005290 [DEBUG] #13 7.184 Collecting soupsieve>1.2 (from beautifulsoup4==4.13.3->-r requirements.txt (line 35))
+2026-Mar-24 16:25:55.140081 [DEBUG] #13 7.196   Downloading soupsieve-2.8.3-py3-none-any.whl.metadata (4.6 kB)
+2026-Mar-24 16:25:55.140081 [DEBUG] #13 7.318 Collecting multitasking>=0.0.7 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:55.327779 [DEBUG] #13 7.334   Downloading multitasking-0.0.12.tar.gz (19 kB)
+2026-Mar-24 16:25:55.327779 [DEBUG] #13 7.357   Installing build dependencies: started
+2026-Mar-24 16:25:57.772089 [DEBUG] #13 9.948   Installing build dependencies: finished with status 'done'
+2026-Mar-24 16:25:57.930305 [DEBUG] #13 9.956   Getting requirements to build wheel: started
+2026-Mar-24 16:25:58.175796 [DEBUG] #13 10.36   Getting requirements to build wheel: finished with status 'done'
+2026-Mar-24 16:25:58.334924 [DEBUG] #13 10.36   Preparing metadata (pyproject.toml): started
+2026-Mar-24 16:25:58.348495 [DEBUG] 
+2026-Mar-24 16:25:58.546523 [DEBUG] #13 10.73   Preparing metadata (pyproject.toml): finished with status 'done'
+2026-Mar-24 16:25:58.708948 [DEBUG] #13 10.78 Collecting platformdirs>=2.0.0 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:58.708948 [DEBUG] #13 10.79   Downloading platformdirs-4.9.4-py3-none-any.whl.metadata (4.7 kB)
+2026-Mar-24 16:25:58.708948 [DEBUG] #13 10.89 Collecting frozendict>=2.3.4 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:58.922493 [DEBUG] #13 10.90   Downloading frozendict-2.4.7-py3-none-any.whl.metadata (23 kB)
+2026-Mar-24 16:25:58.922493 [DEBUG] #13 10.94 Collecting peewee>=3.16.2 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:58.922493 [DEBUG] #13 10.95   Downloading peewee-4.0.2-py3-none-any.whl.metadata (8.6 kB)
+2026-Mar-24 16:25:59.009093 [DEBUG] #13 11.19 Collecting curl_cffi<0.14,>=0.7 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:59.170582 [DEBUG] #13 11.20   Downloading curl_cffi-0.13.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (13 kB)
+2026-Mar-24 16:25:59.576175 [DEBUG] #13 11.75 Collecting protobuf>=3.19.0 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:25:59.739463 [DEBUG] #13 11.77   Downloading protobuf-7.34.1-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+2026-Mar-24 16:25:59.753260 [DEBUG] 
+2026-Mar-24 16:25:59.842928 [DEBUG] #13 12.02 Collecting websockets>=13.0 (from yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:26:00.004369 [DEBUG] #13 12.03   Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+2026-Mar-24 16:26:00.132536 [DEBUG] #13 12.31 Collecting cffi>=1.12.0 (from curl_cffi<0.14,>=0.7->yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:26:00.244832 [DEBUG] #13 12.32   Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+2026-Mar-24 16:26:00.244832 [DEBUG] #13 12.42 Collecting attrs>=23.2.0 (from trio~=0.17->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.379412 [DEBUG] #13 12.44   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+2026-Mar-24 16:26:00.379412 [DEBUG] #13 12.49 Collecting sortedcontainers (from trio~=0.17->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.379412 [DEBUG] #13 12.51   Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl.metadata (10 kB)
+2026-Mar-24 16:26:00.379412 [DEBUG] #13 12.56 Collecting outcome (from trio~=0.17->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.491292 [DEBUG] #13 12.57   Downloading outcome-1.3.0.post0-py2.py3-none-any.whl.metadata (2.6 kB)
+2026-Mar-24 16:26:00.491292 [DEBUG] #13 12.60 Collecting sniffio>=1.3.0 (from trio~=0.17->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.491292 [DEBUG] #13 12.61   Downloading sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+2026-Mar-24 16:26:00.491292 [DEBUG] #13 12.67 Collecting wsproto>=0.14 (from trio-websocket~=0.9->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.591368 [DEBUG] #13 12.68   Downloading wsproto-1.3.2-py3-none-any.whl.metadata (5.2 kB)
+2026-Mar-24 16:26:00.591368 [DEBUG] #13 12.72 Collecting pysocks!=1.5.7,<2.0,>=1.5.6 (from urllib3[socks]<3,>=1.26->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.591368 [DEBUG] #13 12.73   Downloading PySocks-1.7.1-py3-none-any.whl.metadata (13 kB)
+2026-Mar-24 16:26:00.591368 [DEBUG] #13 12.77 Collecting pycparser (from cffi>=1.12.0->curl_cffi<0.14,>=0.7->yfinance>=0.2.54->-r requirements.txt (line 31))
+2026-Mar-24 16:26:00.706890 [DEBUG] #13 12.78   Downloading pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+2026-Mar-24 16:26:00.706890 [DEBUG] #13 12.83 Collecting h11<1,>=0.16.0 (from wsproto>=0.14->trio-websocket~=0.9->selenium==4.29.0->-r requirements.txt (line 34))
+2026-Mar-24 16:26:00.706890 [DEBUG] #13 12.85   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-Mar-24 16:26:00.706890 [DEBUG] #13 12.88 Downloading Django-5.1.7-py3-none-any.whl (8.3 MB)
+2026-Mar-24 16:26:00.808567 [DEBUG] #13 12.96    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 123.8 MB/s eta 0:00:00
+2026-Mar-24 16:26:00.808567 [DEBUG] #13 12.98 Downloading djangorestframework-3.15.2-py3-none-any.whl (1.1 MB)
+2026-Mar-24 16:26:00.808567 [DEBUG] #13 12.99    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 319.5 MB/s eta 0:00:00
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.00 Downloading django_cors_headers-4.7.0-py3-none-any.whl (12 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.02 Downloading django_q2-1.9.0-py3-none-any.whl (89 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.03 Downloading python_dotenv-1.0.1-py3-none-any.whl (19 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.05 Downloading gunicorn-21.2.0-py3-none-any.whl (80 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.06 Downloading whitenoise-6.6.0-py3-none-any.whl (19 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.08 Downloading certifi-2025.1.31-py3-none-any.whl (166 kB)
+2026-Mar-24 16:26:00.917138 [DEBUG] #13 13.09 Downloading charset_normalizer-3.4.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (145 kB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.11 Downloading croniter-5.0.1-py2.py3-none-any.whl (24 kB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.12 Downloading filelock-3.17.0-py3-none-any.whl (16 kB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.13 Downloading idna-3.10-py3-none-any.whl (70 kB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.15 Downloading narwhals-1.30.0-py3-none-any.whl (313 kB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.18 Downloading numpy-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.1 MB)
+2026-Mar-24 16:26:01.076032 [DEBUG] #13 13.25    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.1/16.1 MB 236.4 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.173443 [DEBUG] #13 13.27 Downloading packaging-24.2-py3-none-any.whl (65 kB)
+2026-Mar-24 16:26:01.173443 [DEBUG] #13 13.29 Downloading pandas-2.2.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.7 MB)
+2026-Mar-24 16:26:01.173443 [DEBUG] #13 13.35    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 217.2 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.282198 [DEBUG] #13 13.37 Downloading patsy-1.0.1-py2.py3-none-any.whl (232 kB)
+2026-Mar-24 16:26:01.294100 [DEBUG] #13 13.38 Downloading plotly-6.0.0-py3-none-any.whl (14.8 MB)
+2026-Mar-24 16:26:01.294100 [DEBUG] #13 13.46    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.8/14.8 MB 190.3 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.477686 [DEBUG] #13 13.47 Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+2026-Mar-24 16:26:01.477686 [DEBUG] #13 13.49 Downloading pytz-2025.1-py2.py3-none-any.whl (507 kB)
+2026-Mar-24 16:26:01.477686 [DEBUG] #13 13.50 Downloading requests-2.32.3-py3-none-any.whl (64 kB)
+2026-Mar-24 16:26:01.477686 [DEBUG] #13 13.51 Downloading scipy-1.15.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.3 MB)
+2026-Mar-24 16:26:01.477686 [DEBUG] #13 13.66    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.3/37.3 MB 263.6 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.593450 [DEBUG] #13 13.67 Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+2026-Mar-24 16:26:01.593450 [DEBUG] #13 13.70 Downloading statsmodels-0.14.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (10.7 MB)
+2026-Mar-24 16:26:01.593450 [DEBUG] #13 13.77    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.7/10.7 MB 154.3 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.764995 [DEBUG] #13 13.79 Downloading tzdata-2025.1-py2.py3-none-any.whl (346 kB)
+2026-Mar-24 16:26:01.764995 [DEBUG] #13 13.81 Downloading urllib3-2.3.0-py3-none-any.whl (128 kB)
+2026-Mar-24 16:26:01.764995 [DEBUG] #13 13.82 Downloading selenium-4.29.0-py3-none-any.whl (9.5 MB)
+2026-Mar-24 16:26:01.764995 [DEBUG] #13 13.94    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.5/9.5 MB 84.7 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.869059 [DEBUG] #13 13.96 Downloading beautifulsoup4-4.13.3-py3-none-any.whl (186 kB)
+2026-Mar-24 16:26:01.869059 [DEBUG] #13 13.98 Downloading webdriver_manager-4.0.2-py2.py3-none-any.whl (27 kB)
+2026-Mar-24 16:26:01.869059 [DEBUG] #13 13.99 Downloading lxml-5.3.1-cp312-cp312-manylinux_2_28_x86_64.whl (5.0 MB)
+2026-Mar-24 16:26:01.869059 [DEBUG] #13 14.03    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.0/5.0 MB 138.1 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.869059 [DEBUG] #13 14.05 Downloading yfinance-1.2.0-py2.py3-none-any.whl (130 kB)
+2026-Mar-24 16:26:01.977222 [DEBUG] #13 14.06 Downloading asgiref-3.11.1-py3-none-any.whl (24 kB)
+2026-Mar-24 16:26:01.977222 [DEBUG] #13 14.08 Downloading curl_cffi-0.13.0-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (8.3 MB)
+2026-Mar-24 16:26:01.977222 [DEBUG] #13 14.13    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.3/8.3 MB 186.7 MB/s eta 0:00:00
+2026-Mar-24 16:26:01.977222 [DEBUG] #13 14.14 Downloading django_picklefield-3.4.0-py3-none-any.whl (10 kB)
+2026-Mar-24 16:26:01.977222 [DEBUG] #13 14.15 Downloading frozendict-2.4.7-py3-none-any.whl (16 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.17 Downloading peewee-4.0.2-py3-none-any.whl (143 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.19 Downloading platformdirs-4.9.4-py3-none-any.whl (21 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.22 Downloading protobuf-7.34.1-cp310-abi3-manylinux2014_x86_64.whl (324 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.24 Downloading soupsieve-2.8.3-py3-none-any.whl (37 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.25 Downloading sqlparse-0.5.5-py3-none-any.whl (46 kB)
+2026-Mar-24 16:26:02.091650 [DEBUG] #13 14.26 Downloading trio-0.33.0-py3-none-any.whl (510 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.28 Downloading trio_websocket-0.12.2-py3-none-any.whl (21 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.29 Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.31 Downloading websocket_client-1.9.0-py3-none-any.whl (82 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.33 Downloading websockets-16.0-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (184 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.34 Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.35 Downloading cffi-2.0.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (219 kB)
+2026-Mar-24 16:26:02.195083 [DEBUG] #13 14.37 Downloading outcome-1.3.0.post0-py2.py3-none-any.whl (10 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.38 Downloading PySocks-1.7.1-py3-none-any.whl (16 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.40 Downloading sniffio-1.3.1-py3-none-any.whl (10 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.41 Downloading wsproto-1.3.2-py3-none-any.whl (24 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.43 Downloading sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.44 Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-Mar-24 16:26:02.426355 [DEBUG] #13 14.45 Downloading pycparser-3.0-py3-none-any.whl (48 kB)
+2026-Mar-24 16:26:03.634051 [DEBUG] #13 15.80 Building wheels for collected packages: multitasking
+2026-Mar-24 16:26:03.776288 [DEBUG] #13 15.81   Building wheel for multitasking (pyproject.toml): started
+2026-Mar-24 16:26:04.139261 [DEBUG] #13 16.32   Building wheel for multitasking (pyproject.toml): finished with status 'done'
+2026-Mar-24 16:26:04.300240 [DEBUG] #13 16.32   Created wheel for multitasking: filename=multitasking-0.0.12-py3-none-any.whl size=15635 sha256=60e87be47a15981113a25de24325ffac64c7b6e56c2e0e1d39e367d91e46ecc5
+2026-Mar-24 16:26:04.300240 [DEBUG] #13 16.32   Stored in directory: /tmp/pip-ephem-wheel-cache-6mhi5nu7/wheels/cc/bd/6f/664d62c99327abeef7d86489e6631cbf45b56fbf7ef1d6ef00
+2026-Mar-24 16:26:04.300240 [DEBUG] #13 16.33 Successfully built multitasking
+2026-Mar-24 16:26:04.857956 [DEBUG] #13 17.03 Installing collected packages: sortedcontainers, pytz, peewee, multitasking, whitenoise, websockets, websocket-client, urllib3, tzdata, typing_extensions, sqlparse, soupsieve, sniffio, six, python-dotenv, pysocks, pycparser, protobuf, platformdirs, packaging, numpy, narwhals, lxml, idna, h11, frozendict, filelock, charset-normalizer, certifi, attrs, asgiref, wsproto, scipy, requests, python-dateutil, plotly, patsy, outcome, gunicorn, Django, cffi, beautifulsoup4, webdriver-manager, trio, pandas, djangorestframework, django-picklefield, django-cors-headers, curl_cffi, croniter, yfinance, trio-websocket, statsmodels, django-q2, selenium
+2026-Mar-24 16:27:01.906568 [DEBUG] #13 74.08 Successfully installed Django-5.1.7 asgiref-3.11.1 attrs-26.1.0 beautifulsoup4-4.13.3 certifi-2025.1.31 cffi-2.0.0 charset-normalizer-3.4.1 croniter-5.0.1 curl_cffi-0.13.0 django-cors-headers-4.7.0 django-picklefield-3.4.0 django-q2-1.9.0 djangorestframework-3.15.2 filelock-3.17.0 frozendict-2.4.7 gunicorn-21.2.0 h11-0.16.0 idna-3.10 lxml-5.3.1 multitasking-0.0.12 narwhals-1.30.0 numpy-2.2.3 outcome-1.3.0.post0 packaging-24.2 pandas-2.2.3 patsy-1.0.1 peewee-4.0.2 platformdirs-4.9.4 plotly-6.0.0 protobuf-7.34.1 pycparser-3.0 pysocks-1.7.1 python-dateutil-2.9.0.post0 python-dotenv-1.0.1 pytz-2025.1 requests-2.32.3 scipy-1.15.2 selenium-4.29.0 six-1.17.0 sniffio-1.3.1 sortedcontainers-2.4.0 soupsieve-2.8.3 sqlparse-0.5.5 statsmodels-0.14.4 trio-0.33.0 trio-websocket-0.12.2 typing_extensions-4.15.0 tzdata-2025.1 urllib3-2.3.0 webdriver-manager-4.0.2 websocket-client-1.9.0 websockets-16.0 whitenoise-6.6.0 wsproto-1.3.2 yfinance-1.2.0
+2026-Mar-24 16:27:03.274012 [DEBUG] #13 DONE 75.5s
+2026-Mar-24 16:27:03.428080 [DEBUG] #14 [stage-0 10/11] RUN printf '\nPATH=/opt/venv/bin:$PATH' >> /root/.profile
+2026-Mar-24 16:27:04.361977 [DEBUG] #14 DONE 1.1s
+2026-Mar-24 16:27:04.468883 [DEBUG] #15 [stage-0 11/11] COPY . /app
+2026-Mar-24 16:27:04.468883 [DEBUG] #15 DONE 0.1s
+2026-Mar-24 16:27:04.637091 [DEBUG] #16 exporting to image
+2026-Mar-24 16:27:04.637091 [DEBUG] #16 exporting layers
+2026-Mar-24 16:30:45.476636 [DEBUG] #16 exporting layers 221.0s done
+2026-Mar-24 16:30:45.698891 [DEBUG] #16 exporting manifest sha256:864a00818d8ff4a7cc623a21218a6e5beaf1ed369710e49508fdb715545b4da9 0.0s done
+2026-Mar-24 16:30:45.698891 [DEBUG] #16 exporting config sha256:773f238cdf4193d41e2e6311beab76f45ed79b39c2ede71d207da15c6097be8b 0.0s done
+2026-Mar-24 16:30:45.698891 [DEBUG] #16 exporting attestation manifest sha256:ec8f9567c50f39e97fe370e2b998e0e16e0f47d1d792d8b1ae957ce3a120cea2 0.0s done
+2026-Mar-24 16:30:45.698891 [DEBUG] #16 exporting manifest list sha256:5d18bb0a027ac596e5855538192b88ab3bda00d8229aef99242a2d5992537727 0.0s done
+2026-Mar-24 16:30:45.708624 [DEBUG] #16 naming to docker.io/library/suo52p6enr1962yo55b694ze:787a81adf7bebda0d0e255e1ae30d21d26e226ee done
+2026-Mar-24 16:30:45.708624 [DEBUG] #16 unpacking to docker.io/library/suo52p6enr1962yo55b694ze:787a81adf7bebda0d0e255e1ae30d21d26e226ee
+2026-Mar-24 16:32:01.542480 [DEBUG] #16 unpacking to docker.io/library/suo52p6enr1962yo55b694ze:787a81adf7bebda0d0e255e1ae30d21d26e226ee 76.0s done
+2026-Mar-24 16:32:01.652144 [DEBUG] #16 DONE 297.2s
+2026-Mar-24 16:32:02.071975 [DEBUG] 
+2026-Mar-24 16:32:02.097888 [DEBUG] 3 warnings found (use docker --debug to expand):
+2026-Mar-24 16:32:02.097888 [DEBUG] - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SECRET_KEY") (line 11)
+2026-Mar-24 16:32:02.097888 [DEBUG] - SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "SECRET_KEY") (line 12)
+2026-Mar-24 16:32:02.097888 [DEBUG] - UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 18)
+2026-Mar-24 16:32:02.539741 Building docker image completed.
+2026-Mar-24 16:32:02.608177 [DEBUG] Creating .env file with runtime variables for container.
+2026-Mar-24 16:32:03.040863 ----------------------------------------
+2026-Mar-24 16:32:03.056060 Rolling update started.
+2026-Mar-24 16:32:04.415780 [DEBUG] [CMD]: docker exec s2k7wf2c3xpqpelg30xltpfm bash -c 'COOLIFY_URL=https://api5000.dgen-systems.co COOLIFY_FQDN=api5000.dgen-systems.co COOLIFY_BRANCH=main COOLIFY_RESOURCE_UUID=suo52p6enr1962yo55b694ze  docker compose --project-name suo52p6enr1962yo55b694ze --project-directory /artifacts/s2k7wf2c3xpqpelg30xltpfm -f /artifacts/s2k7wf2c3xpqpelg30xltpfm/docker-compose.yaml up --build -d'
+2026-Mar-24 16:32:04.415780 [DEBUG] time="2026-03-24T16:32:04Z" level=warning msg="Found orphan containers ([suo52p6enr1962yo55b694ze-155455095402]) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+2026-Mar-24 16:32:04.425997 [DEBUG] Container suo52p6enr1962yo55b694ze-162520080418  Creating
+2026-Mar-24 16:32:04.655427 [DEBUG] suo52p6enr1962yo55b694ze-162520080418 Your kernel does not support memory swappiness capabilities or the cgroup is not mounted. Memory swappiness discarded.
+2026-Mar-24 16:32:04.666389 [DEBUG] Container suo52p6enr1962yo55b694ze-162520080418  Created
+2026-Mar-24 16:32:04.696773 [DEBUG] Container suo52p6enr1962yo55b694ze-162520080418  Starting
+2026-Mar-24 16:32:04.992196 [DEBUG] Container suo52p6enr1962yo55b694ze-162520080418  Started
+2026-Mar-24 16:32:05.020488 New container started.
+2026-Mar-24 16:32:05.046795 Removing old containers.
+2026-Mar-24 16:32:06.608562 [DEBUG] [CMD]: docker stop -t 30 suo52p6enr1962yo55b694ze-155455095402
+2026-Mar-24 16:32:06.608562 [DEBUG] suo52p6enr1962yo55b694ze-155455095402
+2026-Mar-24 16:32:07.155163 [DEBUG] [CMD]: docker rm -f suo52p6enr1962yo55b694ze-155455095402
+2026-Mar-24 16:32:07.155163 [DEBUG] suo52p6enr1962yo55b694ze-155455095402
+2026-Mar-24 16:32:07.177994 Rolling update completed.
+2026-Mar-24 16:32:07.988177 Gracefully shutting down build container: s2k7wf2c3xpqpelg30xltpfm
+2026-Mar-24 16:32:08.619341 [DEBUG] [CMD]: docker stop -t 30 s2k7wf2c3xpqpelg30xltpfm
+2026-Mar-24 16:32:08.619341 [DEBUG] s2k7wf2c3xpqpelg30xltpfm
