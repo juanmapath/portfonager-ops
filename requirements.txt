@@ -29,3 +29,9 @@ statsmodels==0.14.4
 tzdata==2025.1
 urllib3==2.3.0
 yfinance>=0.2.54
+
+# Web Scraping & Drivers
+selenium==4.29.0
+beautifulsoup4==4.13.3
+webdriver-manager==4.0.2
+lxml==5.3.1

@@ -7,6 +7,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 import re
 import numpy as np
 import time
@@ -422,7 +425,12 @@ def scrap_TradingView_metrics(ticker,market):
         url_quarter = f"https://www.tradingview.com/symbols/{market.upper()}-{ticker_symbol.upper()}/financials-income-statement/?statements-period=FQ"
 
         # Setup driver ONCE
-        driver = webdriver.Edge()  # Change to the appropriate WebDriver for your browser
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         wait = WebDriverWait(driver, 5)
         timeout = 20  # seconds
         start_time = time.time()
@@ -534,7 +542,12 @@ def scrap_TradingView_metrics(ticker,market):
         url_quarter = f"https://www.tradingview.com/symbols/{market.upper()}-{ticker_symbol.upper()}/financials-statistics-and-ratios/?statistics-period=FQ"
 
         # Setup driver ONCE
-        driver = webdriver.Edge() # Change to the appropriate WebDriver for your browser
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         wait = WebDriverWait(driver, 5)
         timeout = 20  # seconds
         start_time = time.time()
