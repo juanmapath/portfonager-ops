@@ -35,8 +35,8 @@ class ExecuteBotsView(APIView):
             )
 
         # Execute asynchronously with Django-Q
-        async_task('apps.botops.ops.execute_bots.run_bot', f_id, b_id, force_operate=force_op)
-
+        async_task('apps.botops.ops.execute_bots.run_bot_force', f_id, b_id, operate=force_op if force_op is not None else False)
+        #ex: http://api5000.dgen-systems.co/api/botops/execute?family_id=1&bot_id=3&operate=false
         return Response(
             {"message": f"Execution request for Bot {b_id} (Family {f_id}) accepted."}, 
             status=status.HTTP_202_ACCEPTED

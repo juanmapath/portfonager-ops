@@ -48,7 +48,18 @@ def format_json_to_df(json_data):
     df_price = pd.DataFrame(dict_values)
     df_price["Date"] = pd.to_datetime(df_price["timestamp"], unit='s')
 
+    # Drop rows where 'Close' is missing (prevents indicator poisoning)
+    df_price = df_price.dropna(subset=['Close'])
+    
+    # Drop duplicates for the exact same calendar day, keeping the last (latest) one
+    df_price['date_only'] = df_price['Date'].dt.date
+    df_price = df_price.drop_duplicates(subset=['date_only'], keep='last')
+    df_price = df_price.drop(columns=['date_only'])
+    
+    df_price = df_price.reset_index(drop=True)
+
     return df_price
+
 
 
 def get_api_data_yf_native(symbol, tgmToken, tgm_id):

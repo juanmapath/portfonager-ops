@@ -69,6 +69,35 @@ def run_bot(family_id, bot_id, current_hour=None, force_operate=None):
     return f"Strategy {type_strategy} not found in catalog"
 
 
+def run_bot_force(family_id, bot_id, operate=False):
+    """
+    Force executes a bot without applying any timezone, weekend, or schedule checks.
+    Used for manual triggering from API endpoints.
+    """
+    try:
+        bot_obj = Bot.objects.get(id=bot_id, family__id=family_id)
+    except Bot.DoesNotExist:
+        return f"Error: Bot {bot_id} not found"
+        
+    assets_to_trade = BotAsset.objects.filter(bot__family__id=family_id, bot__id=bot_id, operate=True)
+    type_strategy = bot_obj.strategy_type
+    
+    apiToken = bot_obj.tg_key1
+    chatID = bot_obj.tg_key2
+    message = ""
+    
+    if type_strategy in bots_functions:
+        for asset in assets_to_trade:
+            message += bots_functions[type_strategy](asset, operate=operate)
+        
+        if message and apiToken and chatID:
+            send_to_telegram(message,apiToken,chatID)
+            return "Success"
+        return "No message generated or credentials missing"
+    
+    return f"Strategy {type_strategy} not found in catalog"
+
+
 def qnt_bots(current_hour=None):
     return run_bot(family_id=1, bot_id=1, current_hour=current_hour)
 
