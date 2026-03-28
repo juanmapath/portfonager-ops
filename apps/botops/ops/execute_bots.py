@@ -98,6 +98,8 @@ def run_bot_force(family_id, bot_id, operate=False):
     return f"Strategy {type_strategy} not found in catalog"
 
 
+
+""" 
 def qnt_bots(current_hour=None):
     return run_bot(family_id=1, bot_id=1, current_hour=current_hour)
 
@@ -118,4 +120,4 @@ def options_bots(current_hour=None):
     pass
     #return run_bot(family_id=3, bot_id=6, current_hour=current_hour)
 
-
+ """

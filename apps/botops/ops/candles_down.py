@@ -221,7 +221,7 @@ def download_data(asset, tgmToken, tgm_id):
         print(f"General failure in download_data for {asset}: {str(e)}")
         return None, None
 
-
+""" 
 def get_yf_price_series(symbol,start,end):
 
     data = yf.download(symbol, start, end, auto_adjust=True)
@@ -237,7 +237,7 @@ def get_yf_price_series(symbol,start,end):
         
     return data
 
-
+ """
     
 
 if __name__=="__main__":

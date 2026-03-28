@@ -29,19 +29,12 @@ class Bot(models.Model):
     summer_operate_hour = models.IntegerField(default=14)
     winter_operate_hour = models.IntegerField(default=13)
     active = models.BooleanField(default=True)
-    capital_active = models.FloatField(default=0.0)
-    cap_value = models.FloatField(default=0.0)
     cap_ingresado = models.FloatField(default=0.0)
     cap_no_asignado = models.FloatField(default=0.0)
-    cap_to_add = models.FloatField(default=0.0)
     cap_retirado = models.FloatField(default=0.0)
-    pnl_real = models.FloatField(default=0.0)
-    pnl_unreal = models.FloatField(default=0.0)
-    rets = models.FloatField(default=0.0)
     tg_key1 = models.CharField(max_length=255, null=True, blank=True)
     tg_key2 = models.CharField(max_length=255, null=True, blank=True)
-    tp = models.FloatField(default=0.0)
-    sl = models.FloatField(default=0.0)
+ 
 
     def __str__(self):
         return self.name
@@ -105,3 +98,21 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.capital}"
+
+class PortfolioHistory(models.Model):
+    date = models.DateField(default=timezone.now)
+    bot = models.ForeignKey(Bot, on_delete=models.CASCADE, null=True, blank=True, related_name='history')
+    capital = models.FloatField(default=0.0)
+    chg_log = models.FloatField(default=0.0)
+    log_cum_sum = models.FloatField(default=0.0)
+    ret_cums = models.FloatField(default=0.0)
+    cagr = models.FloatField(default=0.0)
+    
+    spy_price = models.FloatField(null=True, blank=True)
+    spy_ret = models.FloatField(default=0.0, null=True, blank=True)
+    qqq_price = models.FloatField(null=True, blank=True)
+    qqq_ret = models.FloatField(default=0.0, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.date} - {'Total' if not self.bot else self.bot.name} - {self.capital}"
+

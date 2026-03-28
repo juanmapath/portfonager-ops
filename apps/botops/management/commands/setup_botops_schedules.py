@@ -31,4 +31,25 @@ class Command(BaseCommand):
             status = "Created" if created else "Updated"
             self.stdout.write(self.style.SUCCESS(f'{status} schedule for {bot.name} at minute {minute}'))
 
+        from apps.botops.models import GeneralSettings
+        try:
+            settings = GeneralSettings.objects.first()
+            end_hour = settings.end_hour if settings else 17
+        except Exception:
+            end_hour = 17
+
+        # Add portfolio history daily schedule at end_hour, minute 0, Mon-Fri
+        hist_schedule_name = 'Daily Portfolio History'
+        hist_schedule, created = Schedule.objects.update_or_create(
+            name=hist_schedule_name,
+            defaults={
+                'func': 'apps.botops.ops.history_updater.all_bots_hist',
+                'schedule_type': Schedule.CRON,
+                'cron': f'0 {end_hour} * * 1-5',
+                'repeats': -1
+            }
+        )
+        hist_status = "Created" if created else "Updated"
+        self.stdout.write(self.style.SUCCESS(f'{hist_status} schedule for {hist_schedule_name}'))
+
         self.stdout.write(self.style.SUCCESS(f'Processed {active_bots.count()} active bots.'))

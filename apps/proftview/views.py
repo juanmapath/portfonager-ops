@@ -65,7 +65,7 @@ class BotAssetAggregatedView(APIView):
 
         aggs = queryset.aggregate(
             cap_to_add_sum=Sum('cap_to_add'),
-            cap_value_in_trade_sum=Sum('cap_value_in_trade'),
+            cap_value_in_trade_sum=Sum('cap_value_in_trade', filter=~Q(qty_open=0)),
             pnl_un_sum=Sum('pnl_un'),
             PNL_sum=Sum('PNL'),
             coms_sum=Sum('coms'),
@@ -84,10 +84,13 @@ class BotAssetAggregatedView(APIView):
         
         cap_no_asignado_sum = bot_aggs['cap_no_asignado_sum'] or 0.0
         total_capital_added = capAdded_sum + cap_no_asignado_sum
+        cap_value_in_trade_sum = aggs['cap_value_in_trade_sum'] or 0.0
+        cap_to_trade_sum = aggs['cap_to_trade_sum'] or 0.0
+        total_cap_value = cap_value_in_trade_sum + cap_no_asignado_sum + cap_to_trade_sum+ cap_to_add_sum
 
         return Response({
             'cap_to_add_sum': cap_to_add_sum,
-            'cap_value_in_trade_sum': aggs['cap_value_in_trade_sum'] or 0.0,
+            'cap_value_in_trade_sum': cap_value_in_trade_sum,
             'pnl_un_sum': aggs['pnl_un_sum'] or 0.0,
             'PNL_sum': aggs['PNL_sum'] or 0.0,
             'coms_sum': aggs['coms_sum'] or 0.0,
@@ -95,7 +98,8 @@ class BotAssetAggregatedView(APIView):
             'cap_to_trade_sum': aggs['cap_to_trade_sum'] or 0.0,
             'capAdded_sum': capAdded_sum,
             'cap_no_asignado': cap_no_asignado_sum,
-            'total_capital_added': total_capital_added
+            'total_capital_added': total_capital_added,
+            'total_cap_value': total_cap_value
         })
 
 class AddCapitalToBotNoAsignView(APIView):

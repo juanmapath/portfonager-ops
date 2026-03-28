@@ -15,13 +15,13 @@ class FamilyAdmin(admin.ModelAdmin):
 
 @admin.register(Bot)
 class BotAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'family', 'strategy_type', 'active', 'execute_minute', 'summer_operate_hour', 'winter_operate_hour', 'capital_active', 'pnl_real', 'pnl_unreal')
+    list_display = ('id', 'name', 'family', 'strategy_type', 'active','cap_no_asignado', 'execute_minute', 'summer_operate_hour', 'winter_operate_hour')
     search_fields = ('name', 'folder', 'family__name')
     list_filter = ('active', 'family')
 
 @admin.register(BotAsset)
 class BotAssetAdmin(admin.ModelAdmin):
-    list_display = ('id', 'asset','bot', 'operate', 'broker', 'qty_open', 'op_price', 'last_price', 'pnl_un')
+    list_display = ('id', 'asset','bot', 'operate', 'broker', 'qty_open', 'cap_to_trade', 'cap_value_in_trade', 'pnl_un')
     search_fields = ('asset', 'broker', 'bot__name')
     list_filter = ('operate', 'broker', 'bot__name', 'bot__family')
 
