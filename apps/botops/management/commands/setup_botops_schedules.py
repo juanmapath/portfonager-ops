@@ -66,4 +66,18 @@ class Command(BaseCommand):
         finviz_status = "Created" if created else "Updated"
         self.stdout.write(self.style.SUCCESS(f'{finviz_status} schedule for {finviz_schedule_name}'))
 
+        # Add weekly GemsFinder screener schedule - every Friday at 10 PM
+        gems_schedule_name = 'Weekly GemsFinder Screener'
+        gems_schedule, created = Schedule.objects.update_or_create(
+            name=gems_schedule_name,
+            defaults={
+                'func': 'apps.gemsfinder.funcs.run_sts.run_st',
+                'schedule_type': Schedule.CRON,
+                'cron': '0 22 * * 5',  # Friday at 10 PM
+                'repeats': -1
+            }
+        )
+        gems_status = "Created" if created else "Updated"
+        self.stdout.write(self.style.SUCCESS(f'{gems_status} schedule for {gems_schedule_name}'))
+
         self.stdout.write(self.style.SUCCESS(f'Processed {active_bots.count()} active bots.'))
