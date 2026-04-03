@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from apps.botops.models import BotAsset, Bot, Family, Broker, Transaction
+from apps.botops.models import BotAsset, Bot, Family, Broker, Transaction, PortfolioHistory
 from .serializers import BotAssetSerializer, BotSerializer, FamilySerializer, BrokerSerializer
 from .permissions import IsSuperUser, IsSuperUserOrReadOnly
 
@@ -217,3 +217,32 @@ class VerifyTokenView(APIView):
 
     def get(self, request):
         return Response({'message': 'Token is valid', 'user': request.user.username})
+
+class PortfolioHistoryView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        bot_id = request.query_params.get('bot_id')
+        queryset = PortfolioHistory.objects.all().order_by('date')
+        
+        if bot_id:
+            queryset = queryset.filter(bot_id=bot_id)
+        else:
+            queryset = queryset.filter(bot__isnull=True)
+            
+        data = []
+        for record in queryset:
+            data.append({
+                'date': record.date,
+                'capital': record.capital,
+                'chg_log': record.chg_log,
+                'log_cum_sum': record.log_cum_sum,
+                'ret_cums': record.ret_cums,
+                'cagr': record.cagr,
+                'spy_price': record.spy_price,
+                'spy_ret': record.spy_ret,
+                'qqq_price': record.qqq_price,
+                'qqq_ret': record.qqq_ret
+            })
+            
+        return Response(data)

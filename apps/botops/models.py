@@ -74,12 +74,12 @@ class BotAsset(models.Model):
     def __str__(self):
         return f"{self.bot.name} - {self.asset} - {self.id}"
 
-
 class AssetSeries(models.Model):
     ticker = models.CharField(max_length=255)
     ochl = models.JSONField(null=True, blank=True)
     ochl_last_update = models.DateTimeField(null=True, blank=True)
     ochl_history = models.JSONField(null=True, blank=True)
+    fin_metrics_series = models.JSONField(null=True, blank=True)
 
 class GeneralSettings(models.Model):
     summer = models.BooleanField(default=True)

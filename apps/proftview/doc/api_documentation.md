@@ -313,3 +313,55 @@ curl -X POST http://localhost:8000/api/proftview/bot/add-capital/ \
   "total_capital_added": 5000.0
 }
 ```
+
+---
+
+## 5. Historial de Portafolio (Portfolio History) [PÚBLICO - GET]
+
+Permite obtener la serie de tiempo del capital y rendimientos, tanto a nivel global como por bot individual. Ideal para graficar el crecimiento del portafolio.
+
+### Listar Histórico
+**Endpoint:** `GET /history/`
+
+**Parámetros de Consulta (Query Params):**
+- `bot_id`: (Opcional) ID del bot para filtrar la historia de ese bot específico. Si se omite, devuelve el historial **Global** (total del sistema).
+
+**Ejemplo de Llamado (Global):**
+```bash
+curl -X GET http://localhost:8000/api/proftview/history/
+```
+
+**Ejemplo de Llamado (Por Bot):**
+```bash
+curl -X GET http://localhost:8000/api/proftview/history/?bot_id=1
+```
+
+**Ejemplo de Respuesta:**
+```json
+[
+  {
+    "date": "2024-03-27",
+    "capital": 10000.0,
+    "chg_log": 0.0,
+    "log_cum_sum": 0.0,
+    "ret_cums": 0.0,
+    "cagr": 0.0,
+    "spy_price": 520.48,
+    "spy_ret": 0.0,
+    "qqq_price": 445.62,
+    "qqq_ret": 0.0
+  },
+  {
+    "date": "2024-03-28",
+    "capital": 10500.0,
+    "chg_log": 0.04879,
+    "log_cum_sum": 0.04879,
+    "ret_cums": 5.0,
+    "cagr": 182.5,
+    "spy_price": 522.5,
+    "spy_ret": 0.0038,
+    "qqq_price": 448.2,
+    "qqq_ret": 0.0057
+  }
+]
+```

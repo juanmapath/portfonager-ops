@@ -51,6 +51,7 @@ DJANGO_APPS = [
 PROJECT_APPS = [
     'apps.botops',
     'apps.proftview',
+    'apps.gemsfinder',
 ]
 
 

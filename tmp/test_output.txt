@@ -1,0 +1,21 @@
+C:\Users\juanm\WorkSpace\portfonager-ops\apps
+Starting test scrap...
+Scrapping URL: https://finviz.com/screener.ashx?v=150&f=cap_microover,sh_price_o2,sh_avgvol_o300,fa_roi_o10,fa_peg_u2&ft=2&c=1,2,3,4,5,6,7,9,11,12,13,21,23,133,25,26,27,32,33,34,36,38,40,41,65
+Total results: 394, total pages: 1
+Scrapping page 1 of 1
+
+Scraping successful!
+Number of rows: 20
+
+Columns:
+['Ticker', 'Company', 'sector', 'industry', 'country', 'marketCap', 'price_per_earnings', 'PEG', 'price_per_book', 'price_per_cash', 'price_per_fcf', 'sales_growth_5y', 'sales_growth_qoq', 'sales_growth_yoy', 'shares_flaot', 'insider_ownership', 'insider_trans', 'roa', 'roe', 'roic', 'quick_ratio', 'debt_to_quity', 'oper_margin', 'profit_margin', 'Price', 'date']
+
+First 5 rows:
+  Ticker                       Company  ...   Price        date
+0      A      Agilent Technologies Inc  ...  114.84  2026-04-02
+1     AA                    Alcoa Corp  ...   70.89  2026-04-02
+2     AB  AllianceBernstein Holding Lp  ...   38.45  2026-04-02
+3   ABNB                    Airbnb Inc  ...  124.83  2026-04-02
+4    ABT           Abbott Laboratories  ...  102.53  2026-04-02
+
+[5 rows x 26 columns]
