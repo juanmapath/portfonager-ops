@@ -49,7 +49,10 @@ def process_bot_history(bot, date_today, spy_price, qqq_price, cap_total):
     
     spy_ret = 0.0
     qqq_ret = 0.0
-    chg_log = 0.0
+    spy_log_cum_sum = 0.0
+    spy_ret_cums = 0.0
+    qqq_log_cum_sum = 0.0
+    qqq_ret_cums = 0.0
     log_cum_sum = 0.0
     ret_cums = 0.0
     cagr = 0.0
@@ -60,9 +63,20 @@ def process_bot_history(bot, date_today, spy_price, qqq_price, cap_total):
         ret_cums = 100 * (np.exp(log_cum_sum) - 1)
         
         if last_record.spy_price and spy_price:
-            spy_ret = calculate_log_return(spy_price, last_record.spy_price) * 100
+            spy_ret = calculate_log_return(spy_price, last_record.spy_price)
+            spy_log_cum_sum = last_record.spy_log_cum_sum + spy_ret
+            spy_ret_cums = 100 * (np.exp(spy_log_cum_sum) - 1)
+        else:
+            spy_log_cum_sum = last_record.spy_log_cum_sum
+            spy_ret_cums = last_record.spy_ret_cums
+
         if last_record.qqq_price and qqq_price:
-            qqq_ret = calculate_log_return(qqq_price, last_record.qqq_price) * 100
+            qqq_ret = calculate_log_return(qqq_price, last_record.qqq_price)
+            qqq_log_cum_sum = last_record.qqq_log_cum_sum + qqq_ret
+            qqq_ret_cums = 100 * (np.exp(qqq_log_cum_sum) - 1)
+        else:
+            qqq_log_cum_sum = last_record.qqq_log_cum_sum
+            qqq_ret_cums = last_record.qqq_ret_cums
             
         first_record = PortfolioHistory.objects.filter(bot=bot).order_by('date').first()
         if first_record:
@@ -72,14 +86,17 @@ def process_bot_history(bot, date_today, spy_price, qqq_price, cap_total):
         date=date_today,
         bot=bot,
         capital=cap_total,
-        chg_log=chg_log,
         log_cum_sum=log_cum_sum,
         ret_cums=ret_cums,
         cagr=cagr,
         spy_price=spy_price,
         spy_ret=spy_ret,
+        spy_log_cum_sum=spy_log_cum_sum,
+        spy_ret_cums=spy_ret_cums,
         qqq_price=qqq_price,
-        qqq_ret=qqq_ret
+        qqq_ret=qqq_ret,
+        qqq_log_cum_sum=qqq_log_cum_sum,
+        qqq_ret_cums=qqq_ret_cums
     )
 
 def all_bots_hist():

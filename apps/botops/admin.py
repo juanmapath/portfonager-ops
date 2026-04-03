@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Family, Bot, BotAsset, AssetSeries, Broker, GeneralSettings, Transaction
+from .models import Family, Bot, BotAsset, AssetSeries, Broker, GeneralSettings, Transaction, PortfolioHistory
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
@@ -41,3 +41,10 @@ class GeneralSettingsAdmin(admin.ModelAdmin):
     list_display = ('id', 'summer', 'start_hour', 'end_hour')
     search_fields = ('summer', 'start_hour', 'end_hour')
 
+@admin.register(PortfolioHistory)
+class PortfolioHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'date', 'bot', 'capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'spy_ret_cums', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum', 'qqq_ret_cums')
+    list_editable = ('capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'spy_ret_cums', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum', 'qqq_ret_cums')
+    search_fields = ('bot__name',)
+    list_filter = ('date', 'bot')
+    ordering = ('-date',)
