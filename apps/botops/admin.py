@@ -43,8 +43,8 @@ class GeneralSettingsAdmin(admin.ModelAdmin):
 
 @admin.register(PortfolioHistory)
 class PortfolioHistoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'date', 'bot', 'capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'spy_ret_cums', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum', 'qqq_ret_cums')
-    list_editable = ('capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'spy_ret_cums', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum', 'qqq_ret_cums')
+    list_display = ('id', 'date', 'bot', 'capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum')
+    list_editable = ('capital', 'log_cum_sum', 'ret_cums', 'cagr', 'spy_price', 'spy_ret', 'spy_log_cum_sum', 'qqq_price', 'qqq_ret', 'qqq_log_cum_sum')
     search_fields = ('bot__name',)
     list_filter = ('date', 'bot')
     ordering = ('-date',)

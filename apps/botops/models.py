@@ -110,11 +110,9 @@ class PortfolioHistory(models.Model):
     spy_price = models.FloatField(null=True, blank=True)
     spy_ret = models.FloatField(default=0.0, null=True, blank=True)
     spy_log_cum_sum = models.FloatField(default=0.0)
-    spy_ret_cums = models.FloatField(default=0.0)
     qqq_price = models.FloatField(null=True, blank=True)
     qqq_ret = models.FloatField(default=0.0, null=True, blank=True)
     qqq_log_cum_sum = models.FloatField(default=0.0)
-    qqq_ret_cums = models.FloatField(default=0.0)
 
     def __str__(self):
         return f"{self.date} - {'Total' if not self.bot else self.bot.name} - {self.capital}"

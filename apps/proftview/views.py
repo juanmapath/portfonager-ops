@@ -241,11 +241,9 @@ class PortfolioHistoryView(APIView):
                 'spy_price': record.spy_price,
                 'spy_ret': record.spy_ret,
                 'spy_log_cum_sum': record.spy_log_cum_sum,
-                'spy_ret_cums': record.spy_ret_cums,
                 'qqq_price': record.qqq_price,
                 'qqq_ret': record.qqq_ret,
                 'qqq_log_cum_sum': record.qqq_log_cum_sum,
-                'qqq_ret_cums': record.qqq_ret_cums,
             })
             
         return Response(data)
