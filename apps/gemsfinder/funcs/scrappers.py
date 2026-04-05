@@ -61,6 +61,7 @@ def scrap_finviz_screener_costum(params_dict, top=False):
         "marketCap":6,
         "price_per_earnings":7,
         "PEG":9,
+        "price_per_sales":10,
         "price_per_book":11,
         "price_per_cash":12,
         "price_per_fcf":13,
@@ -78,6 +79,7 @@ def scrap_finviz_screener_costum(params_dict, top=False):
         "debt_to_quity":38,
         "oper_margin":40,
         "profit_margin":41,
+        "earnings_date":68,
         "Price": 65,
     }
 

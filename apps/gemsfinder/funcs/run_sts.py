@@ -22,7 +22,8 @@ import django
 django.setup()
 
 from apps.gemsfinder.models import GemScrapperTactics, ScrapingSession, SelectedAsset, CompetitorAsset
-from apps.gemsfinder.funcs.scrappers import scrap_finviz_screener, scrap_finviz_screener_costum
+from apps.botops.models import AssetSeries
+from apps.gemsfinder.funcs.scrappers import scrap_finviz_screener, scrap_finviz_screener_costum, update_finviz_metrics_series
 
 def safe_float(value):
     try:
@@ -31,87 +32,43 @@ def safe_float(value):
         return None
 
 
-def score_metrics_all(metrics: dict, market_cap_category: str) -> dict:
-    thresholds = {
-        "large": {
-            "price_per_earnings": (10, 40),
-            "price_per_fcf": (10, 40),
-            "price_per_book": (1, 6),
-            "price_per_cash": (2, 15),
-            "roa": (2, 15),
-            "roe": (5, 25),
-            "quick_ratio": (0.8, 2.5),
-            "oper_margin": (5, 25),
-            "profit_margin": (5, 25),
-            "insider_ownership": (0.5, 5),
-        },
-        "mid": {
-            "price_per_earnings": (8, 35),
-            "price_per_fcf": (8, 35),
-            "price_per_book": (0.8, 5),
-            "price_per_cash": (1.5, 12),
-            "roa": (3, 18),
-            "roe": (7, 28),
-            "quick_ratio": (0.8, 2.5),
-            "oper_margin": (5, 20),
-            "profit_margin": (5, 20),
-            "insider_ownership": (1, 10),
-        },
-        "small": {
-            "price_per_earnings": (6, 30),
-            "price_per_fcf": (6, 30),
-            "price_per_book": (0.5, 4),
-            "price_per_cash": (1, 10),
-            "roa": (4, 20),
-            "roe": (10, 35),
-            "quick_ratio": (0.6, 2.5),
-            "oper_margin": (3, 18),
-            "profit_margin": (3, 18),
-            "insider_ownership": (2, 15),
-        },
-        "all": {
-            "price_per_earnings": (8, 35),
-            "price_per_fcf": (8, 35),
-            "price_per_book": (0.8, 5),
-            "price_per_cash": (1.5, 12),
-            "roa": (3, 18),
-            "roe": (7, 28),
-            "quick_ratio": (0.8, 2.5),
-            "oper_margin": (5, 20),
-            "profit_margin": (5, 20),
-            "insider_ownership": (1, 10),
-        },
-    }
+def compute_trends(fin_series):
+    def extract_metric(series, key, index):
+        try:
+            if not series or key not in series: return None
+            val_list = series[key]
+            if index >= len(val_list): return None
+            val = str(val_list[index]).replace(",", "")
+            return float(val) if val else None
+        except (IndexError, ValueError, TypeError):
+            return None
 
-    def score_val_metric(value, best, worst):
-        val = safe_float(value)
-        if val is None:
-            return 0
-        return clip((worst - val) / (worst - best), 0, 1)
-
-    def score_growth_metric(value, worst, best):
-        val = safe_float(value)
-        if val is None:
-            return 0
-        return clip((val - worst) / (best - worst), 0, 1)
-
-    if market_cap_category not in thresholds:
-        market_cap_category = "all"
-
-    t = thresholds[market_cap_category]
-    scores = {}
-
-    for metric, value in metrics.items():
-        if metric in t:
-            best, worst = t[metric]
-            if "price" in metric:
-                scores[metric] = round(score_val_metric(value, best, worst), 3)
-            else:
-                scores[metric] = round(score_growth_metric(value, worst, best), 3)
-        else:
-            scores[metric] = None
-
-    return scores
+    # We use index 1 (latest FY), index 2 (1 year prior), index 4 (3 years prior)
+    rev_1 = extract_metric(fin_series, "Total Revenue", 1)
+    rev_2 = extract_metric(fin_series, "Total Revenue", 2)
+    rev_4 = extract_metric(fin_series, "Total Revenue", 4)
+    
+    op_m_1 = extract_metric(fin_series, "Operating Margin", 1)
+    op_m_4 = extract_metric(fin_series, "Operating Margin", 4)
+    
+    ebitda_1 = extract_metric(fin_series, "EBITDA", 1)
+    ebitda_2 = extract_metric(fin_series, "EBITDA", 2)
+    
+    rev_accel = np.nan
+    if rev_1 and rev_2 and rev_4 and rev_2 > 0 and rev_4 > 0:
+        yoy = (rev_1 / rev_2) - 1
+        cagr3 = (rev_1 / rev_4) ** (1/3) - 1
+        rev_accel = yoy - cagr3
+        
+    margin_expansion = np.nan
+    if op_m_1 is not None and op_m_4 is not None:
+        margin_expansion = op_m_1 - op_m_4
+        
+    ebitda_growth = np.nan
+    if ebitda_1 and ebitda_2 and ebitda_2 > 0:
+        ebitda_growth = (ebitda_1 / ebitda_2) - 1
+        
+    return rev_accel, margin_expansion, ebitda_growth
 
 
 def total_portfolio_score(scores: dict, tactic: GemScrapperTactics):
@@ -123,8 +80,8 @@ def total_portfolio_score(scores: dict, tactic: GemScrapperTactics):
 
     # Metric Groups Weights from DB
     val_w = tactic.value_weights or {"price_per_earnings": 1, "price_per_book": 1, "price_per_cash": 1, "price_per_fcf": 2}
-    qual_w = tactic.quality_weights or {"roa": 1, "roe": 1, "quick_ratio": 1, "oper_margin": 2, "profit_margin": 1, "insider_ownership": 1, "insider_trans": 1}
-    trend_w = tactic.trend_weights or {} 
+    qual_w = tactic.quality_weights or {"roic": 2, "roa": 1, "roe": 1, "quick_ratio": 1, "oper_margin": 2, "profit_margin": 1, "insider_ownership": 1, "insider_trans": 1}
+    trend_w = tactic.trend_weights or {"rev_accel": 2, "margin_expansion": 1, "ebitda_growth": 1} 
 
     # Normalize group weights
     val_tot = sum(float(v) for v in val_w.values()) or 1
@@ -137,9 +94,9 @@ def total_portfolio_score(scores: dict, tactic: GemScrapperTactics):
     trend_w = {k: float(v)/trend_tot for k, v in trend_w.items()} if trend_w else {}
 
     # Compute Group Scores
-    val_score = sum((scores.get(k) or 0) * val_w.get(k, 0) for k in val_w)
-    qual_score = sum((scores.get(k) or 0) * qual_w.get(k, 0) for k in qual_w)
-    trend_score = sum((scores.get(k) or 0) * trend_w.get(k, 0) for k in trend_w)
+    val_score = sum((scores.get(f"{k}_score") or 0) * val_w.get(k, 0) for k in val_w)
+    qual_score = sum((scores.get(f"{k}_score") or 0) * qual_w.get(k, 0) for k in qual_w)
+    trend_score = sum((scores.get(f"{k}_score") or 0) * trend_w.get(k, 0) for k in trend_w)
 
     total = w_val * val_score + w_qual * qual_score + w_trend * trend_score
     return round(total, 4)
@@ -153,7 +110,7 @@ def compare_industry(industry):
     if df_compare is False or df_compare.empty:
         return pd.DataFrame()
 
-    columns_to_convert = ['price_per_fcf', 'price_per_earnings', 'price_per_book', 'roe', 'oper_margin', 'debt_to_quity', 'sales_growth_qoq', 'sales_growth_yoy']
+    columns_to_convert = ['price_per_fcf', 'price_per_earnings', 'price_per_book', 'price_per_sales', 'roe', 'oper_margin', 'debt_to_quity', 'sales_growth_qoq', 'sales_growth_yoy']
     for col in columns_to_convert:
         if col in df_compare.columns:
             df_compare[col] = pd.to_numeric(df_compare[col], errors='coerce')
@@ -163,6 +120,7 @@ def compare_industry(industry):
     if df_cleaned.empty:
         return df_cleaned
 
+    df_cleaned["priceToSales_avg"] = df_cleaned.get("price_per_sales", pd.Series(dtype=float)).median()
     df_cleaned["priceToFCF_avg"] = df_cleaned.get("price_per_fcf", pd.Series(dtype=float)).median()
     df_cleaned["priceToEarn_avg"] = df_cleaned.get("price_per_earnings", pd.Series(dtype=float)).median()
     df_cleaned["priceToBook_avg"] = df_cleaned.get("price_per_book", pd.Series(dtype=float)).median()
@@ -197,15 +155,21 @@ def run_st():
 
         asset_df['price_per_earnings'] = asset_df['price_per_earnings'].replace("-", np.nan)
         asset_df['price_per_book'] = asset_df['price_per_book'].replace("-", np.nan)
+        asset_df['price_per_sales'] = asset_df.get('price_per_sales', pd.Series(dtype=float)).replace("-", np.nan)
         asset_df['price_per_cash'] = asset_df['price_per_cash'].replace("-", np.nan)
         asset_df['price_per_fcf'] = asset_df['price_per_fcf'].replace("-", np.nan)
         asset_df['roa'] = asset_df['roa'].replace("-",  np.nan)   
         asset_df['roe'] = asset_df['roe'].replace("-",  np.nan)
+        asset_df['roic'] = asset_df.get('roic', pd.Series(dtype=float)).replace("-",  np.nan)
         asset_df['quick_ratio'] = asset_df['quick_ratio'].replace("-",  np.nan)
         asset_df['oper_margin'] = asset_df['oper_margin'].replace("-",  np.nan)
-        asset_df['profit_margin'] = asset_df['profit_margin'].replace("-",  np.nan)   
+        asset_df['profit_margin'] = asset_df['profit_margin'].replace("-",  np.nan)
+        asset_df['earnings_date'] = asset_df.get('earnings_date', pd.Series(dtype=str)).replace("-",  np.nan)
+        asset_df['insider_ownership'] = asset_df.get('insider_ownership', pd.Series(dtype=float)).replace("-",  np.nan)
+        asset_df['insider_trans'] = asset_df.get('insider_trans', pd.Series(dtype=float)).replace("-",  np.nan)
 
         asset_df['total_score'] = 0.0
+        asset_df["priceToSales_avg"] = 0.0
         asset_df["priceToFCF_avg"] = 0.0
         asset_df["priceToEarn_avg"] = 0.0
         asset_df["priceToBook_avg"] = 0.0
@@ -230,7 +194,7 @@ def run_st():
             competitor_dfs.append(compare_asset_df)
 
             # Assign medians back to the main dataframe
-            cols_to_update = ["priceToFCF_avg", "priceToEarn_avg", "priceToBook_avg", "roe_avg", "oper_margin_avg", "debt_equity_avg", "sales_growth_qoq_avg", "sales_growth_yoy_avg"]
+            cols_to_update = ["priceToSales_avg", "priceToFCF_avg", "priceToEarn_avg", "priceToBook_avg", "roe_avg", "oper_margin_avg", "debt_equity_avg", "sales_growth_qoq_avg", "sales_growth_yoy_avg"]
             first_index = compare_asset_df.index[0]
             values_to_assign = compare_asset_df.loc[first_index, cols_to_update]
 
@@ -238,31 +202,82 @@ def run_st():
             for col in cols_to_update:
                 asset_df.loc[industry_mask, col] = values_to_assign[col]
 
-        # Combine competitors into one mapping df (avoids duplicating API calls or loops)
+        # Combinar competidores
         competitors_pool = pd.concat(competitor_dfs, ignore_index=True) if competitor_dfs else pd.DataFrame()
+
+        # ====================
+        # TREND METRICS (Only for asset_df to preserve requests)
+        # ====================
+        print("Fetching Financial Statements for Trend Analysis...")
+        asset_df["rev_accel"] = np.nan
+        asset_df["margin_expansion"] = np.nan
+        asset_df["ebitda_growth"] = np.nan
+        
+        for idx, row in asset_df.iterrows():
+            ticker = row["ticker"]
+            print(f"Scraping Trend Metrics for {ticker}...")
+            success, merged_data = update_finviz_metrics_series(ticker)
+            if success and merged_data:
+                r_accel, m_exp, ebitda_g = compute_trends(merged_data)
+                asset_df.at[idx, "rev_accel"] = r_accel
+                asset_df.at[idx, "margin_expansion"] = m_exp
+                asset_df.at[idx, "ebitda_growth"] = ebitda_g
+            time.sleep(1.5)  # Rate limiting
+            
+        # ====================
+        # CROSS-SECTIONAL RANKING (Percentiles)
+        # ====================
+        print("Scoring assets using cross-sectional percentiles...")
+        if not competitors_pool.empty:
+            full_universe = pd.concat([asset_df, competitors_pool]).drop_duplicates(subset=['ticker']).copy()
+        else:
+            full_universe = asset_df.copy()
+            
+        val_metrics = ["price_per_earnings", "price_per_book", "price_per_sales", "price_per_cash", "price_per_fcf"]
+        qual_metrics = ["roa", "roe", "roic", "quick_ratio", "oper_margin", "profit_margin", "insider_ownership", "insider_trans"]
+        trend_metrics = ["rev_accel", "margin_expansion", "ebitda_growth"]
+        
+        numeric_cols = val_metrics + qual_metrics + trend_metrics
+        for col in numeric_cols:
+            if col in full_universe.columns:
+                full_universe[col] = pd.to_numeric(full_universe[col], errors='coerce')
+            if col in asset_df.columns:
+                asset_df[col] = pd.to_numeric(asset_df[col], errors='coerce')
+
+        # Compute Value & Quality percentiles on full_universe 
+        # (smaller is better for Value metrics -> ascending=False for rank)
+        for col in val_metrics:
+            if col in full_universe.columns:
+                full_universe[f"{col}_score"] = full_universe[col].rank(pct=True, ascending=False)
+        for col in qual_metrics:
+            if col in full_universe.columns:
+                full_universe[f"{col}_score"] = full_universe[col].rank(pct=True, ascending=True)
+                
+        # Map Value/Quality scores back to asset_df
+        for col in val_metrics + qual_metrics:
+            score_col = f"{col}_score"
+            if score_col in full_universe.columns:
+                score_map = full_universe.set_index('ticker')[score_col].to_dict()
+                asset_df[score_col] = asset_df['ticker'].map(score_map)
+                
+        # Rank Trend ONLY within asset_df
+        for col in trend_metrics:
+            if col in asset_df.columns:
+                asset_df[f"{col}_score"] = asset_df[col].rank(pct=True, ascending=True)
 
         # Score final assets & Save to DB
         selected_instances = []
         for index, row in asset_df.iterrows():
             ticker = row["ticker"]
-            metrics_to_score = {
-                "price_per_earnings": row.get("price_per_earnings"),
-                "price_per_book": row.get("price_per_book"),
-                "price_per_cash": row.get("price_per_cash"),
-                "price_per_fcf": row.get("price_per_fcf"),
-                "roa": row.get("roa"),
-                "roe": row.get("roe"),
-                "quick_ratio": row.get("quick_ratio"),
-                "oper_margin": row.get("oper_margin"),
-                "profit_margin": row.get("profit_margin"),
-                "insider_ownership": row.get("insider_ownership"),
-                "insider_trans": row.get("insider_trans"),
-            }
             
-            scores = score_metrics_all(metrics_to_score, tactic.market_cap_category or "all")
-            final_score = total_portfolio_score(scores, tactic)
+            # Recolectar scores
+            scores_map = {}
+            for col in val_metrics + qual_metrics + trend_metrics:
+                scores_map[f"{col}_score"] = row.get(f"{col}_score", 0.0)
             
-            if final_score is None:
+            final_score = total_portfolio_score(scores_map, tactic)
+            
+            if final_score is None or pd.isna(final_score):
                 final_score = 0.0
                 
             asset_df.at[index, 'total_score'] = final_score
