@@ -3,7 +3,7 @@ from .models import Family, Bot, BotAsset, AssetSeries, Broker, GeneralSettings,
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'date', 'bot', 'assetbot', 'capital', 'add_withdraw', 'previous_capital_added', 'posterior_capital_added')
+    list_display = ('id', 'date', 'bot', 'assetbot', 'capital', 'add_withdraw', 'move_between_bots', 'previous_capital_added', 'posterior_capital_added')
     search_fields = ('bot__name', 'assetbot__asset')
     list_filter = ('date', 'add_withdraw', 'bot')
 

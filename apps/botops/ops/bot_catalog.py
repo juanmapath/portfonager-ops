@@ -193,20 +193,20 @@ def run_multi_strategy(BotAsset, operate=False):
             #adding to the pos
             if (sts_qty_new_len > sts_qty_prev_len) & (prev_cap_to_add>0):
                 
-                new_cap_to_trade = prev_cap_to_trade + prev_cap_to_add
+                new_cap_to_trade = prev_cap_to_trade + prev_cap_to_add - coms_per_trade
                 new_cap_to_add = 0
-                new_cap_value_in_trade = prev_cap_value_in_trade + prev_cap_to_add
+                new_cap_value_in_trade = prev_cap_value_in_trade + prev_cap_to_add - coms_per_trade
                 qty_to_add = round_up(prev_cap_to_add/new_close,4)
                 new_qty_open = prev_qty_open + qty_to_add
                 new_op_price = ((prev_qty_open*prev_op_price) + (qty_to_add*new_close))/(prev_qty_open+qty_to_add)
-                new_coms = prev_coms + 0.15
+                new_coms = prev_coms + coms_per_trade
                 
                 if operate == True:
                     BotAsset.params3 = new_active_st_names
                     BotAsset.qty_open = new_qty_open
-                    BotAsset.cap_to_trade = new_cap_to_trade
+                    BotAsset.cap_to_trade = new_cap_to_trade #ya tiene coms de entrada
                     BotAsset.cap_to_add = new_cap_to_add
-                    BotAsset.cap_value_in_trade = new_cap_value_in_trade
+                    BotAsset.cap_value_in_trade = new_cap_value_in_trade #ya tiene coms de entrada
                     BotAsset.op_price = new_op_price
                     BotAsset.coms = new_coms
                     BotAsset.last_price = new_close
@@ -230,11 +230,11 @@ def run_multi_strategy(BotAsset, operate=False):
     #si cierra largo o corto
     if ((prev_pos_gp != 0) & (new_pos_gp != prev_pos_gp)):
 
-        new_pnl = pnl_group - 0.15
+        new_pnl = pnl_group 
         new_pnl_un = 0
         new_op_price = new_close
         new_trades = prev_trades + 0.5
-        new_coms = prev_coms + 0.15
+        new_coms = prev_coms + coms_per_trade
         new_position = 0
         new_qty_open = 0
         new_cap_to_trade = new_cap_value_in_trade - coms_per_trade
@@ -267,11 +267,11 @@ def run_multi_strategy(BotAsset, operate=False):
     if (change_side == True) | ((prev_pos_gp == 0) & (new_pos_gp != 0)):
 
         if change_side == True:
-            new_cap_to_trade = new_cap_to_trade + prev_cap_to_add - coms_per_trade
+            new_cap_to_trade = new_cap_to_trade + prev_cap_to_add - coms_per_trade #quita coms
             new_trades = new_trades + 0.5
             new_coms = new_coms + coms_per_trade
         else:
-            new_cap_to_trade = prev_cap_to_trade + prev_cap_to_add - coms_per_trade
+            new_cap_to_trade = prev_cap_to_trade + prev_cap_to_add - coms_per_trade #quita coms
             new_trades = prev_trades + 0.5
             new_coms = prev_coms + coms_per_trade
 
@@ -284,7 +284,7 @@ def run_multi_strategy(BotAsset, operate=False):
             BotAsset.params3 = new_active_st_names
             BotAsset.position = new_pos_gp
             BotAsset.qty_open = new_qty_open
-            BotAsset.cap_to_trade = new_cap_to_trade
+            BotAsset.cap_to_trade = new_cap_to_trade #ya quito coms
             BotAsset.cap_to_add = new_cap_to_add
             BotAsset.cap_value_in_trade = new_cap_value_in_trade
             BotAsset.op_price = new_op_price
@@ -385,11 +385,11 @@ def run_one_strategy(BotAsset, operate=False):
     #si cierra largo o corto
     if ((prev_pos != 0) & (new_pos != prev_pos)):
 
-        new_pnl = pnl_group - 0.15
+        new_pnl = pnl_group 
         new_pnl_un = 0
         new_op_price = new_close
         new_trades = prev_trades + 0.5
-        new_coms = prev_coms + 0.15
+        new_coms = prev_coms + coms_per_trade
         new_position = 0
         new_qty_open = 0
         new_cap_to_trade = new_cap_value_in_trade - coms_per_trade

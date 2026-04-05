@@ -261,48 +261,56 @@ curl -X GET "http://localhost:8000/api/proftview/assets/aggregated/?family=1&bot
 }
 ```
 
-### Adición de Capital a Activo (BotAsset)
-**Endpoint:** `POST /assets/add-capital/`
+### Adición/Retiro de Capital a Activo (BotAsset)
+**Endpoint:** `POST /assets/add-remove-capital/` [PROTEGIDO]
 
-Permite añadir capital al campo `cap_to_add` de un `BotAsset` específico y registrar una transacción.
+Permite añadir o retirar capital de un `BotAsset`. Los movimientos de capital se gestionan internamente entre el activo y el capital no asignado (`cap_no_asignado`) del bot asociado.
 
 **Cuerpo de la Petición (Request Body):**
 - `bot_asset_id`: (Requerido) ID del BotAsset.
-- `amount`: (Requerido) Cantidad de capital a añadir (puede ser negativo, siempre que el resultado en `cap_to_add` sea positivo).
+- `amount`: (Requerido) Cantidad de capital. 
+    - **Positivo**: Adiciona capital al activo, priorizando el uso del `cap_no_asignado` del bot. Si el bot no tiene suficiente, el resto se registra como capital externo.
+    - **Negativo**: Retira capital del activo y lo mueve al `cap_no_asignado` del bot. Requiere que no haya posiciones abiertas si se desea retirar del capital operativo (`cap_to_trade`).
 
-**Ejemplo de Llamado:**
+**Ejemplo de Llamado (Depósito):**
 ```bash
-curl -X POST http://localhost:8000/api/proftview/assets/add-capital/ \
+curl -X POST http://localhost:8000/api/proftview/assets/add-remove-capital/ \
      -H "Content-Type: application/json" \
+     -H "Authorization: Token <tu_token>" \
      -d '{"bot_asset_id": 1, "amount": 500.0}'
 ```
 
-**Ejemplo de Respuesta:**
+**Ejemplo de Respuesta (Depósito):**
 ```json
 {
-  "message": "Capital added to asset successfully",
+  "message": "Capital added successfully",
   "bot_asset_id": 1,
   "new_cap_to_add": 500.0,
-  "total_capital_added": 5500.0
+  "amount_from_unallocated": 100.0,
+  "amount_fresh": 400.0
+}
+```
+
+**Ejemplo de Respuesta (Retiro):**
+```json
+{
+  "message": "Capital moved to unallocated successfully",
+  "bot_asset_id": 1,
+  "withdraw_amount": 200.0,
+  "new_cap_to_add": 0.0,
+  "new_cap_to_trade": 800.0
 }
 ```
 
 ### Adición de Capital (Unassigned)
-**Endpoint:** `POST /bot/add-capital/`
+**Endpoint:** `POST /bot/add-capital/` [PROTEGIDO]
 
-Permite añadir capital al campo `cap_no_asignado` de un bot y registrar una transacción.
+Permite añadir capital al campo `cap_no_asignado` de un bot y registrar una transacción externa.
 
 **Cuerpo de la Petición (Request Body):**
 - `bot_id`: (Requerido) ID del bot.
 - `amount`: (Requerido) Cantidad de capital a añadir.
 - `broker_id`: (Requerido) ID del broker relacionado.
-
-**Ejemplo de Llamado:**
-```bash
-curl -X POST http://localhost:8000/api/proftview/bot/add-capital/ \
-     -H "Content-Type: application/json" \
-     -d '{"bot_id": 1, "amount": 1000.0, "broker_id": 1}'
-```
 
 **Ejemplo de Respuesta:**
 ```json
@@ -311,6 +319,35 @@ curl -X POST http://localhost:8000/api/proftview/bot/add-capital/ \
   "bot_id": 1,
   "new_cap_no_asignado": 1000.0,
   "total_capital_added": 5000.0
+}
+```
+
+### Cierre de Posición (Close Position)
+**Endpoint:** `POST /assets/close-position/` [PROTEGIDO]
+
+Permite cerrar una posición total o parcial de un activo, actualizando el PNL y moviendo el capital liberado al campo `cap_to_add` del activo.
+
+**Cuerpo de la Petición (Request Body):**
+- `bot_asset_id`: (Requerido) ID del BotAsset.
+- `all_quantity`: (Requerido) Boolean. `true` para cerrar toda la posición.
+- `execution_price`: (Requerido) Precio de ejecución del cierre.
+- `quantity_closed`: (Opcional) Requerido solo si `all_quantity` es `false`.
+
+**Ejemplo de Llamado:**
+```bash
+curl -X POST http://localhost:8000/api/proftview/assets/close-position/ \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Token <tu_token>" \
+     -d '{"bot_asset_id": 1, "all_quantity": true, "execution_price": 48000.0}'
+```
+
+**Ejemplo de Respuesta:**
+```json
+{
+  "message": "Position closed successfully",
+  "bot_asset_id": 1,
+  "capital_to_add": 2500.0,
+  "pnl_added": 150.0
 }
 ```
 

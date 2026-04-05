@@ -63,6 +63,7 @@ class BotAsset(models.Model):
     last_price = models.FloatField(default=0.0)
     pnl_un = models.FloatField(default=0.0)
     capAdded = models.FloatField(default=0.0)
+    capWithdrew = models.FloatField(default=0.0)
     PNL = models.FloatField(default=0.0)
     trades = models.FloatField(default=0.0)
     coms = models.FloatField(default=0.0)
@@ -93,6 +94,7 @@ class Transaction(models.Model):
     posterior_capital_added = models.FloatField(default=0.0, null=True, blank=True)
     capital = models.FloatField(default=0.0)
     add_withdraw = models.IntegerField(default=1)
+    move_between_bots = models.BooleanField(default=False)
     date = models.DateField(null=True, blank=True)
     broker = models.ForeignKey(Broker, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
 
