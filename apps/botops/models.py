@@ -96,6 +96,7 @@ class Transaction(models.Model):
     add_withdraw = models.IntegerField(default=1)
     move_between_bots = models.BooleanField(default=False)
     date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
     broker = models.ForeignKey(Broker, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
 
     def __str__(self):
@@ -103,6 +104,7 @@ class Transaction(models.Model):
 
 class PortfolioHistory(models.Model):
     date = models.DateField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
     bot = models.ForeignKey(Bot, on_delete=models.CASCADE, null=True, blank=True, related_name='history')
     capital = models.FloatField(default=0.0)
     log_cum_sum = models.FloatField(default=0.0)

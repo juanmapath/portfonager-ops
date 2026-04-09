@@ -18,7 +18,7 @@ try:
 except Exception:
     pass
 
-from apps.botops.models import Bot, BotAsset, PortfolioHistory
+from apps.botops.models import Bot, BotAsset, PortfolioHistory, Transaction
 from apps.botops.ops.bot_catalog import check_last_ohlc_and_download_data
 
 def fetch_latest_price(symbol):
@@ -55,8 +55,33 @@ def process_bot_history(bot, date_today, spy_price, qqq_price, cap_total):
     ret_cums = 0.0
     cagr = 0.0
     
+    # Calcular los flujos de caja desde la última fotografía registrada
+    if last_record and last_record.created_at:
+        if bot:
+            txs = Transaction.objects.filter(created_at__gt=last_record.created_at, move_between_bots=False, bot=bot)
+        else:
+            txs = Transaction.objects.filter(created_at__gt=last_record.created_at, move_between_bots=False)
+    else:
+        # Fallback histórico para el día 1 de los bots
+        if bot:
+            txs = Transaction.objects.filter(date=date_today, move_between_bots=False, bot=bot)
+        else:
+            txs = Transaction.objects.filter(date=date_today, move_between_bots=False)
+        
+    added_capital = txs.filter(add_withdraw=1).aggregate(val=Sum('capital'))['val'] or 0.0
+    withdrawn_capital = txs.filter(add_withdraw=0).aggregate(val=Sum('capital'))['val'] or 0.0
+    
+    net_cash_flow = added_capital - withdrawn_capital
+    
     if last_record and last_record.capital > 0:
-        chg_log = calculate_log_return(cap_total, last_record.capital)
+        
+        # Asunción de Flujo Final (Final del día)
+        # Se resta el flujo neto del capital total para medir solo el crecimiento de las operaciones.
+        adjusted_final_capital = cap_total - net_cash_flow
+        if adjusted_final_capital <= 0:
+            adjusted_final_capital = cap_total  # Fallback extremo para evitar log(0) o negativos
+            
+        chg_log = calculate_log_return(adjusted_final_capital, last_record.capital)
         log_cum_sum = last_record.log_cum_sum + chg_log
         ret_cums = 100 * (np.exp(log_cum_sum) - 1)
         
