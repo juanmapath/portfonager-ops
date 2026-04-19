@@ -52,6 +52,7 @@ PROJECT_APPS = [
     'apps.botops',
     'apps.proftview',
     'apps.gemsfinder',
+    'apps.backtestlab',
 ]
 
 

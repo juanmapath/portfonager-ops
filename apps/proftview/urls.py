@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     BotAssetViewSet, BotViewSet, FamilyViewSet, BrokerViewSet, 
     BotAssetAggregatedView, AddCapitalToBotNoAsignView, AddRemoveCapitalToAssetView,
-    LoginView, VerifyTokenView, PortfolioHistoryView, ClosePositionView
+    LoginView, VerifyTokenView, PortfolioHistoryView, ClosePositionView,
+    PortfolioPercentagesView
 )
 
 router = DefaultRouter()
@@ -18,6 +19,7 @@ urlpatterns = [
     path('bot/add-capital/', AddCapitalToBotNoAsignView.as_view(), name='add-capital-to-bot'),
     path('assets/close-position/', ClosePositionView.as_view(), name='close-position'),
     path('history/', PortfolioHistoryView.as_view(), name='portfolio-history'),
+    path('portfolio-percentages/', PortfolioPercentagesView.as_view(), name='portfolio-percentages'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/verify/', VerifyTokenView.as_view(), name='auth-verify'),
     path('', include(router.urls)),

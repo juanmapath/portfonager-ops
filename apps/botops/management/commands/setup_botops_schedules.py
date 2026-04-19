@@ -80,4 +80,18 @@ class Command(BaseCommand):
         gems_status = "Created" if created else "Updated"
         self.stdout.write(self.style.SUCCESS(f'{gems_status} schedule for {gems_schedule_name}'))
 
+        # Add weekly backtest schedule - every Sunday at 6 AM
+        backtest_schedule_name = 'Weekly Active Bots Backtest'
+        backtest_schedule, created = Schedule.objects.update_or_create(
+            name=backtest_schedule_name,
+            defaults={
+                'func': 'apps.backtestlab.scripts.backtest_model.run_all_active_bots',
+                'schedule_type': Schedule.CRON,
+                'cron': '0 6 * * 0',  # Sunday at 6 AM
+                'repeats': -1
+            }
+        )
+        backtest_status = "Created" if created else "Updated"
+        self.stdout.write(self.style.SUCCESS(f'{backtest_status} schedule for {backtest_schedule_name}'))
+
         self.stdout.write(self.style.SUCCESS(f'Processed {active_bots.count()} active bots.'))

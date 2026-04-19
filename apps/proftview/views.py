@@ -390,3 +390,76 @@ class ClosePositionView(APIView):
             'pnl_added': delta_pnl
         })
 
+class PortfolioPercentagesView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        # Using aggregation to get totals, matching BotAssetAggregatedView logic
+        asset_aggs = BotAsset.objects.aggregate(
+            cap_to_add_sum=Sum('cap_to_add'),
+            cap_value_in_trade_sum=Sum('cap_value_in_trade', filter=~Q(qty_open=0)),
+            cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+        )
+        bot_aggs = Bot.objects.aggregate(
+            cap_no_asignado_sum=Sum('cap_no_asignado')
+        )
+
+        cap_to_add_sum = asset_aggs['cap_to_add_sum'] or 0.0
+        cap_value_in_trade_sum = asset_aggs['cap_value_in_trade_sum'] or 0.0
+        cap_to_trade_sum = asset_aggs['cap_to_trade_sum'] or 0.0
+        cap_no_asignado_sum = bot_aggs['cap_no_asignado_sum'] or 0.0
+
+        total_portfolio_value = cap_value_in_trade_sum + cap_no_asignado_sum + cap_to_trade_sum + cap_to_add_sum
+
+        if total_portfolio_value == 0:
+            return Response({'error': 'Total portfolio value is zero'}, status=400)
+
+        asset_bots = BotAsset.objects.select_related('bot').all()
+        bots = Bot.objects.all()
+
+        asset_bot_percentages = []
+        bot_values = {bot.id: {'bot_name': bot.name, 'value': bot.cap_no_asignado or 0.0, 'cash': bot.cap_no_asignado or 0.0} for bot in bots}
+
+        for asset in asset_bots:
+            # If qty_open != 0, use cap_value_in_trade, else use cap_to_trade
+            if asset.qty_open != 0:
+                val = (asset.cap_value_in_trade or 0.0) + (asset.cap_to_add or 0.0)
+            else:
+                val = (asset.cap_to_trade or 0.0) + (asset.cap_to_add or 0.0)
+            
+            asset_bot_percentages.append({
+                'bot_asset_id': asset.id,
+                'asset': asset.asset,
+                'bot_name': asset.bot.name,
+                'value': val,
+                'percentage': (val / total_portfolio_value) * 100
+            })
+            
+            if asset.bot_id in bot_values:
+                bot_values[asset.bot_id]['value'] += val
+        
+        # Add global cash to asset_bot_percentages
+        asset_bot_percentages.append({
+            'bot_asset_id': None,
+            'asset': 'Cash',
+            'bot_name': 'All',
+            'value': cap_no_asignado_sum,
+            'percentage': (cap_no_asignado_sum / total_portfolio_value) * 100
+        })
+
+        # Calculate bot percentages
+        bot_percentages = []
+        for bot_id, data in bot_values.items():
+            bot_percentages.append({
+                'bot_id': bot_id,
+                'bot_name': data['bot_name'],
+                'value': data['value'],
+                'cash_included': data['cash'],
+                'percentage': (data['value'] / total_portfolio_value) * 100
+            })
+
+        return Response({
+            'total_portfolio_value': total_portfolio_value,
+            'asset_bot_percentages': asset_bot_percentages,
+            'bot_percentages': bot_percentages
+        })

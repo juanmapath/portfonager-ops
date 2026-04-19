@@ -402,3 +402,54 @@ curl -X GET http://localhost:8000/api/proftview/history/?bot_id=1
   }
 ]
 ```
+
+---
+
+## 6. Porcentajes del Portafolio (Portfolio Percentages) [PÚBLICO - GET]
+
+Calcula la distribución porcentual del capital total del portafolio, desglosado tanto por activos (`BotAsset`) como por bots (`Bot`).
+
+### Obtener Porcentajes
+**Endpoint:** `GET /portfolio-percentages/`
+
+**Descripción del Cálculo:**
+- **Valor por Activo:** Se calcula como `cap_value_in_trade + cap_to_add` si el activo tiene una posición abierta (`position != 0`), de lo contrario se usa `cap_to_trade + cap_to_add`.
+- **Efectivo (Cash):** Se incluye un rubro especial que representa el capital no asignado (`cap_no_asignado`) acumulado de todos los bots.
+- **Valor por Bot:** Es la sumatoria de los valores de sus activos más su propio capital no asignado.
+
+**Ejemplo de Llamado:**
+```bash
+curl -X GET http://localhost:8000/api/proftview/portfolio-percentages/
+```
+
+**Ejemplo de Respuesta:**
+```json
+{
+  "total_portfolio_value": 150000.0,
+  "asset_bot_percentages": [
+    {
+      "bot_asset_id": 1,
+      "asset": "BTC/USDT",
+      "bot_name": "BitTrader",
+      "value": 10000.0,
+      "percentage": 6.66
+    },
+    {
+      "bot_asset_id": null,
+      "asset": "Cash",
+      "bot_name": "All",
+      "value": 20000.0,
+      "percentage": 13.33
+    }
+  ],
+  "bot_percentages": [
+    {
+      "bot_id": 1,
+      "bot_name": "BitTrader",
+      "value": 50000.0,
+      "cash_included": 10000.0,
+      "percentage": 33.33
+    }
+  ]
+}
+```
