@@ -791,14 +791,12 @@ def bootstrap_testh0_probability_distribution(returns_list, folder, name_abrev, 
     estadisticas_bootstrap_h0=[]
 
 
-    #resample for confidence interval and null hypotesis distribution
-    for _ in range(num_muestras):
-        muestra_bootstrap = np.random.choice(returns_list, size=len(returns_list), replace=True) #boostrap from sample statistic
-        muestra_bootstrap_ho = np.random.choice(list_of_returns_centered, size=len(list_of_returns_centered), replace=True) #boostrap from h0 centered
-        estadistica_ci = np.mean(muestra_bootstrap)  # Cambia esto según tu estadística de interés
-        estadistica_h0 = np.mean(muestra_bootstrap_ho)
-        estadisticas_bootstrap_ci.append(estadistica_ci)
-        estadisticas_bootstrap_h0.append(estadistica_h0)
+    # resample for confidence interval and null hypotesis distribution using vectorized numpy
+    muestras_ci = np.random.choice(returns_list, size=(num_muestras, len(returns_list)), replace=True)
+    muestras_h0 = np.random.choice(list_of_returns_centered, size=(num_muestras, len(list_of_returns_centered)), replace=True)
+    
+    estadisticas_bootstrap_ci = muestras_ci.mean(axis=1).tolist()
+    estadisticas_bootstrap_h0 = muestras_h0.mean(axis=1).tolist()
 
     
     confidence_interaval_30 = np.percentile(estadisticas_bootstrap_ci, [35, 65])
@@ -1000,13 +998,17 @@ def run(bot_asset_id):
         )
         print(f"Saved BacktestResult for {s['period']}")
 
+from django_q.tasks import async_task
+
 def run_all_active_bots():
     active_assets = BotAsset.objects.filter(operate=True)
     for bot_asset in active_assets:
         try:
-            run(bot_asset.id)
+            # Enqueue each bot as a separate task to avoid global timeout and allow parallel execution
+            async_task('apps.backtestlab.scripts.backtest_model.run', bot_asset.id)
+            print(f"Enqueued backtest task for BotAsset {bot_asset.id}")
         except Exception as e:
-            print(f"Error running backtest for BotAsset {bot_asset.id}: {e}")
+            print(f"Error enqueuing backtest for BotAsset {bot_asset.id}: {e}")
 
 if __name__=="__main__":
     if len(sys.argv) > 1:

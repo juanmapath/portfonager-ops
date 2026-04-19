@@ -88,7 +88,8 @@ class Command(BaseCommand):
                 'func': 'apps.backtestlab.scripts.backtest_model.run_all_active_bots',
                 'schedule_type': Schedule.CRON,
                 'cron': '0 6 * * 0',  # Sunday at 6 AM
-                'repeats': -1
+                'repeats': -1,
+                'timeout': 900
             }
         )
         backtest_status = "Created" if created else "Updated"
