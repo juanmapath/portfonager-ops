@@ -108,8 +108,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DATA_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 30,  # Increase timeout to handle concurrent writes in SQLite
+        },
     }
 }
+
+# SQLite WAL mode is recommended for concurrent access (Django Q workers)
+# You can enable it manually running: python manage.py shell -c "import sqlite3; conn = sqlite3.connect('data/db.sqlite3'); conn.execute('PRAGMA journal_mode=WAL;')"
 
 # CORS & CSRF
 CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'

@@ -292,7 +292,7 @@ def run_multi_strategy(BotAsset, operate=False):
             BotAsset.pnl_un = 0
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
-            BotAsset.update_date = today
+            BotAsset.updated_date = today
             BotAsset.save() 
         
         #just open long
@@ -445,7 +445,7 @@ def run_one_strategy(BotAsset, operate=False):
             BotAsset.pnl_un = 0
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
-            BotAsset.update_date = today
+            BotAsset.updated_date = today
             BotAsset.save() 
         
         #just open long
@@ -523,6 +523,181 @@ def follow_price_update_pos(BotAsset, operate=False):
            
     return message_order
 
+
+def one_strategy_cross_assets(BotAsset, operate=False):
+
+    bot_asset_id = BotAsset.id
+    asset_to_operate = BotAsset.asset
+    apiToken = BotAsset.bot.tg_key1
+    chatID = BotAsset.bot.tg_key2
+
+    # El asset de las señales estará en params3[0]
+    try:
+        asset_signals = parse_string_list(BotAsset.params3)[0]
+    except (IndexError, TypeError):
+        send_to_telegram(f"Error: No signal asset found in params3 for {asset_to_operate}", apiToken, chatID)
+        return
+
+    # params1[0] is strategy name
+    try:
+        individual_sts_names = parse_string_list(BotAsset.params1)[0]
+    except (IndexError, TypeError):
+        send_to_telegram(f"Error: No strategy name found in params1 for {asset_to_operate}", apiToken, chatID)
+        return
+
+    # params2[0] is strategy params
+    try:
+        params_of_individual_sts = ast.literal_eval(BotAsset.params2)[0]
+    except Exception:
+        try:
+            params_of_individual_sts = eval(BotAsset.params2)[0]
+        except Exception:
+            send_to_telegram(f"Error: Could not parse params in params2 for {asset_to_operate}", apiToken, chatID)
+            return
+
+    broker = BotAsset.broker
+    prev_pos = BotAsset.position
+    prev_qty_open = BotAsset.qty_open
+    prev_cap_to_trade = BotAsset.cap_to_trade
+    prev_cap_to_add = BotAsset.cap_to_add
+    prev_cap_value_in_trade = BotAsset.cap_value_in_trade
+    prev_op_price = BotAsset.op_price
+    prev_last_price = BotAsset.last_price
+    prev_pnl = BotAsset.PNL
+    prev_pnl_un = BotAsset.pnl_un
+    prev_trades = BotAsset.trades
+    prev_coms = BotAsset.coms
+
+    coms_per_trade = BotAsset.broker.coms
+    today = pd.Timestamp.today()
+
+    # Descargar velas del asset de SEÑALES
+    df_signals = check_last_ohlc_and_download_data(asset_signals, apiToken, chatID)
+    if df_signals is None or df_signals.empty:
+        send_to_telegram(f"Failed to download {asset_signals} data (signals)", apiToken, chatID)
+        return
+
+    # Descargar velas del asset de OPERACION
+    df_operate = check_last_ohlc_and_download_data(asset_to_operate, apiToken, chatID)
+    if df_operate is None or df_operate.empty:
+        send_to_telegram(f"Failed to download {asset_to_operate} data (operate)", apiToken, chatID)
+        return
+
+    params = params_of_individual_sts
+    nombre = individual_sts_names
+
+    print(f'----------------------------------------------------------')
+    print("")
+    print("STATUS STRATEGY CROSS ASSETS")
+    print(f'{nombre}:: Signals:{asset_signals} -> Operate:{asset_to_operate}')
+
+    # Correr estrategia en asset de señales
+    new_pos, signal_close, _, _ = strategy_functions[nombre](df_signals, params)
+    
+    # Precio actual del asset de operación
+    new_close = df_operate['Close'].iloc[-1]
+    
+    new_cap_value_in_trade = prev_qty_open * new_close
+    pnl_group = new_cap_value_in_trade - prev_cap_to_trade - coms_per_trade
+    
+    message_order = ""
+    message_order += f'{bot_asset_id}-{asset_to_operate} (Sig:{asset_signals}) -- TotPNL: ${prev_pnl}\n' 
+    message_order += f'-> {broker} \n'
+
+    change_side = False
+
+    if (prev_pos == new_pos):
+        if prev_pos == 0:
+            message_order += f'No position -> KEEP\n'
+        else:
+            message_order += f'Pos Value: {round(new_cap_value_in_trade,1)}USD\n'
+            message_order += f'Pos pnl: {round(pnl_group,1)}USD\n'
+            message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
+            if operate == True:
+                BotAsset.cap_value_in_trade = new_cap_value_in_trade
+                BotAsset.pnl_un = pnl_group
+                BotAsset.last_price = new_close
+                BotAsset.updated_date = today
+                BotAsset.save()
+
+    # si cierra largo o corto
+    if ((prev_pos != 0) & (new_pos != prev_pos)):
+
+        new_pnl = pnl_group 
+        new_pnl_un = 0
+        new_op_price = new_close
+        new_trades = prev_trades + 0.5
+        new_coms = prev_coms + coms_per_trade
+        new_position = 0
+        new_qty_open = 0
+        new_cap_to_trade = new_cap_value_in_trade - coms_per_trade
+        new_cap_value_in_trade = 0
+     
+        if operate == True:
+            BotAsset.position = 0
+            BotAsset.qty_open = 0
+            BotAsset.cap_to_trade = new_cap_to_trade
+            BotAsset.cap_value_in_trade = 0
+            BotAsset.op_price = new_op_price
+            BotAsset.last_price = new_close
+            BotAsset.pnl_un = 0
+            BotAsset.PNL = prev_pnl + new_pnl
+            BotAsset.trades = new_trades
+            BotAsset.coms = new_coms
+            BotAsset.updated_date = today
+            BotAsset.save() 
+        
+        message_order += f'Pos pnl: {round(prev_pnl_un,1)}USD\n'
+        message_order += f'CLOSE POSITION\n'
+        message_order += f'--> Sell {round(prev_cap_value_in_trade,1)}USD\n'
+        message_order += f'--> Sell -{prev_qty_open}qty SELL ALL\n'
+
+        if new_pos != 0:
+            change_side = True
+
+    # si abre largo o corto desde 0
+    if (change_side == True) | ((prev_pos == 0) & (new_pos != 0)):
+
+        if change_side == True:
+            new_cap_to_trade = new_cap_to_trade + prev_cap_to_add - coms_per_trade
+            new_trades = new_trades + 0.5
+            new_coms = new_coms + coms_per_trade
+        else:
+            new_cap_to_trade = prev_cap_to_trade + prev_cap_to_add - coms_per_trade
+            new_trades = prev_trades + 0.5
+            new_coms = prev_coms + coms_per_trade
+
+        new_cap_to_add = 0
+        new_cap_value_in_trade = new_cap_to_trade 
+        new_qty_open = round_down(new_cap_value_in_trade/new_close,4)
+        new_op_price = new_close
+
+        if operate == True:
+            BotAsset.position = new_pos
+            BotAsset.qty_open = new_qty_open
+            BotAsset.cap_to_trade = new_cap_to_trade
+            BotAsset.cap_to_add = new_cap_to_add
+            BotAsset.cap_value_in_trade = new_cap_value_in_trade
+            BotAsset.op_price = new_op_price
+            BotAsset.last_price = new_close
+            BotAsset.pnl_un = 0
+            BotAsset.trades = new_trades
+            BotAsset.coms = new_coms
+            BotAsset.updated_date = today
+            BotAsset.save() 
+        
+        # just open long
+        if new_pos == 1:
+            message_order += f'--> Buy {round(new_cap_to_trade,1)}USD\n'
+            message_order += f'--> Buy +{new_qty_open}qty BUY\n'
+            
+        if new_pos == -1:
+            message_order += f'--> Sell short {round(new_cap_to_trade,1)}USD\n'
+            message_order += f'--> Sell short +{new_qty_open}qty SELL short\n'
+         
+
+    message_order += f'________________\n'
+    return message_order
 
 def signal_dollar_bot(BotAsset, operate=False):
     url_trm = "https://www.datos.gov.co/api/views/ceyp-9c7c/rows.csv?accessType=DOWNLOAD"
@@ -627,6 +802,8 @@ def signal_options_bot(BotAsset, operate=False):
     return message_order
 
 
+
+
 def signal_options_bot_macro(BotAsset):
 
     available_capital = BotAsset.bot.capital_active
@@ -728,7 +905,8 @@ def signal_options_bot_macro(BotAsset):
 
     return message_order
 
-    
+
+
 
 #catalogs
 bots_functions={
@@ -736,7 +914,8 @@ bots_functions={
     "OneStrategy": run_one_strategy,
     "FollowPrice": follow_price_update_pos,
     "SignalDollar": signal_dollar_bot,
-    "SignalOptions": signal_options_bot
+    "SignalOptions": signal_options_bot,
+    "CrossAssetsOneSt": one_strategy_cross_assets,
 }
 
 if __name__ == '__main__':

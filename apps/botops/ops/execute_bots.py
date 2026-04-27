@@ -2,12 +2,18 @@ import sys
 from pathlib import Path
 from django.utils import timezone
 
+import os
+import django
+
 root_directory = Path(__file__).resolve().parent.parent.parent.parent
 bot_directory = root_directory / "bot"
 if str(root_directory) not in sys.path:
     sys.path.append(str(root_directory))
 if str(bot_directory) not in sys.path:
     sys.path.append(str(bot_directory))
+
+#os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+#django.setup()
 
 from apps.botops.models import GeneralSettings, Bot, BotAsset
 from apps.botops.ops.tgrm import send_to_telegram
@@ -99,25 +105,6 @@ def run_bot_force(family_id, bot_id, operate=False):
 
 
 
-""" 
-def qnt_bots(current_hour=None):
-    return run_bot(family_id=1, bot_id=1, current_hour=current_hour)
-
-
-def maxcaps_bots(current_hour=None):
-    return run_bot(family_id=1, bot_id=2, current_hour=current_hour)
-
-
-def speculator_bots(current_hour=None):
-    return run_bot(family_id=1, bot_id=3, current_hour=current_hour)
-
-
-def buy_dollar_bots(current_hour=None):
-    pass
-    #return run_bot(family_id=3, bot_id=1, current_hour=current_hour)
-
-def options_bots(current_hour=None):
-    pass
-    #return run_bot(family_id=3, bot_id=6, current_hour=current_hour)
-
- """
+if __name__ == "__main__":
+    
+    run_bot_force(1,8)

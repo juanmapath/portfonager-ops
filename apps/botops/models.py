@@ -15,6 +15,7 @@ class StrategyType(models.TextChoices):
     follow_price = 'FollowPrice', 'FollowPrice'
     signal_dollar = 'SignalDollar', 'SignalDollar'
     signal_options = 'SignalOptions', 'SignalOptions'
+    cross_assets_one_st = 'CrossAssetsOneSt', 'CrossAssetsOneSt'
 
 class Bot(models.Model):
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='bots')

@@ -985,18 +985,30 @@ def run(bot_asset_id):
         bootstrap = summer_test_clean.pop("bootstrap", {})
         distributions["bootstrap"] = bootstrap
 
-        BacktestResult.objects.update_or_create(
-            bot_asset=bot_asset,
-            period=s["period"],
-            defaults={
-                "metrics": summer_test_clean,
-                "distributions": distributions,
-                "equity_curve": equity_curve,
-                "bh_curve": bh_curve,
-                "drawdown_curve": drawdown_curve
-            }
-        )
-        print(f"Saved BacktestResult for {s['period']}")
+        # Retry loop for handling SQLite 'database is locked' errors
+        import time
+        from django.db import OperationalError
+        for attempt in range(5):
+            try:
+                BacktestResult.objects.update_or_create(
+                    bot_asset=bot_asset,
+                    period=s["period"],
+                    defaults={
+                        "metrics": summer_test_clean,
+                        "distributions": distributions,
+                        "equity_curve": equity_curve,
+                        "bh_curve": bh_curve,
+                        "drawdown_curve": drawdown_curve
+                    }
+                )
+                print(f"Saved BacktestResult for {s['period']}")
+                break
+            except OperationalError as e:
+                if 'locked' in str(e) and attempt < 4:
+                    print(f"Database locked, retrying {attempt+1}/5...")
+                    time.sleep(1)
+                else:
+                    raise
 
 from django_q.tasks import async_task
 
