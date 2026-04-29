@@ -60,7 +60,8 @@ class Command(BaseCommand):
                 'func': 'apps.gemsfinder.funcs.update_all_finviz_metrics.run_update',
                 'schedule_type': Schedule.CRON,
                 'cron': '0 19 * * 1-5',
-                'repeats': -1
+                'repeats': -1,
+                'timeout': 1800
             }
         )
         finviz_status = "Created" if created else "Updated"
