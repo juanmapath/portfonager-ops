@@ -27,3 +27,5 @@ yarn-error.log*
 /venv
 db.sqlite3
 venv
+
+/research

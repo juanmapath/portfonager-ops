@@ -133,7 +133,7 @@ class AddCapitalToBotNoAsignView(APIView):
         Transaction.objects.create(
             bot=bot,
             assetbot=None,
-            capital=amount,
+            capital=abs(amount),
             add_withdraw=1 if amount > 0 else 0, # El prompt dice: "si es positivo add_withdrwa 1"
             previous_capital_added=previous_capital_added,
             posterior_capital_added=posterior_capital_added,

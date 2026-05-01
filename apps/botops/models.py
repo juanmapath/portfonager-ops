@@ -57,6 +57,8 @@ class BotAsset(models.Model):
     broker = models.ForeignKey(Broker, on_delete=models.CASCADE, related_name='assets',default=1)
     position = models.IntegerField(default=0)
     qty_open = models.FloatField(default=0.0)
+    leverage = models.FloatField(default=1.0)
+    cap_lever = models.FloatField(default=0.0)
     cap_to_trade = models.FloatField(default=0.0)
     cap_to_add = models.FloatField(default=0.0)
     cap_value_in_trade = models.FloatField(default=0.0)
