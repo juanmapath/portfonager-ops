@@ -1,13 +1,20 @@
 from django.utils import timezone
 from django.db.models import Sum, Q
+from django.core.cache import cache
+import io
+import requests
+import numpy as np
+import pandas as pd
 from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from apps.botops.models import BotAsset, Bot, Family, Broker, Transaction, PortfolioHistory
+from apps.botops.ops.indicators import zscore
 from .serializers import BotAssetSerializer, BotSerializer, FamilySerializer, BrokerSerializer
 from .permissions import IsSuperUser, IsSuperUserOrReadOnly
+
 
 class BotAssetViewSet(viewsets.ModelViewSet):
     queryset = BotAsset.objects.all()
@@ -463,3 +470,71 @@ class PortfolioPercentagesView(APIView):
             'asset_bot_percentages': asset_bot_percentages,
             'bot_percentages': bot_percentages
         })
+
+class SignalDollarView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        cache_key = "signal_dollar_view_data"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data)
+
+        url_trm = "https://www.datos.gov.co/api/views/ceyp-9c7c/rows.csv?accessType=DOWNLOAD"
+        try:
+            trm_gov = requests.get(url_trm, timeout=15)
+            data_str = trm_gov.content.decode('utf8')
+            df_read = pd.read_csv(io.StringIO(data_str))
+        except Exception as e:
+            return Response({"error": f"Failed to fetch TRM data: {str(e)}"}, status=500)
+
+        df = df_read.drop(columns=["VIGENCIAHASTA"], errors="ignore")
+        df = df.rename(columns={"VALOR": "Close", "VIGENCIADESDE": "Date"})
+        df["Date_dt"] = pd.to_datetime(df["Date"], format="%d/%m/%Y")
+        usd_kls = df.sort_values(by="Date_dt", ascending=True).reset_index(drop=True).copy()
+
+        zscore_period = 10
+        zs_buy_level = -1.9
+        bb_period = 10
+        bb_std = 2
+        
+        usd_kls["zscore"] = zscore(usd_kls, zscore_period, "Close")
+        usd_kls["BB_mid"] = usd_kls["Close"].rolling(window=bb_period).apply(lambda x: np.mean(x), raw=True)
+        usd_kls["BB_std"] = usd_kls["Close"].rolling(window=bb_period).apply(lambda x: np.std(x), raw=True)
+        usd_kls["BB_low"] = usd_kls["BB_mid"] - (usd_kls["BB_std"] * bb_std)
+
+        usd_kls["close_round"] = usd_kls["Close"].round(1)
+        usd_kls["zscore_round"] = usd_kls["zscore"].round(2)
+        usd_kls["bb_low_round"] = usd_kls["BB_low"].round(2)
+
+        cond_zscore = (usd_kls["zscore_round"] < zs_buy_level) & (usd_kls["zscore_round"].shift(1) > zs_buy_level)
+        cond_bb = (usd_kls["close_round"] < usd_kls["bb_low_round"]) & (usd_kls["close_round"].shift(1) > usd_kls["bb_low_round"].shift(1))
+        usd_kls["buy_signal"] = cond_zscore | cond_bb
+
+        usd_kls["date"] = usd_kls["Date_dt"].dt.strftime("%Y-%m-%d")
+        usd_kls["close"] = usd_kls["close_round"]
+        usd_kls["zscore"] = usd_kls["zscore_round"]
+        usd_kls["bb_low"] = usd_kls["bb_low_round"]
+        usd_kls["buy_signal"] = usd_kls["buy_signal"].astype(bool)
+
+        export_cols = ["date", "close", "zscore", "bb_low", "buy_signal"]
+        df_export = usd_kls[export_cols + ["Date_dt"]].copy().astype(object)
+        df_export = df_export.replace({np.nan: None, np.inf: None, -np.inf: None})
+
+        max_date = df_export["Date_dt"].max()
+        one_year_ago = max_date - pd.DateOffset(years=1)
+        one_month_ago = max_date - pd.DateOffset(months=1)
+
+        hist_data = df_export[export_cols].to_dict(orient="records")
+        year_data = df_export[df_export["Date_dt"] >= one_year_ago][export_cols].to_dict(orient="records")
+        month_data = df_export[df_export["Date_dt"] >= one_month_ago][export_cols].to_dict(orient="records")
+
+        response_data = {
+            "historical": hist_data,
+            "last_year": year_data,
+            "last_month": month_data,
+        }
+
+        cache.set(cache_key, response_data, 60*60)  # 1 hour cache
+        return Response(response_data)
+

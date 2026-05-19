@@ -4,7 +4,7 @@ from .views import (
     BotAssetViewSet, BotViewSet, FamilyViewSet, BrokerViewSet, 
     BotAssetAggregatedView, AddCapitalToBotNoAsignView, AddRemoveCapitalToAssetView,
     LoginView, VerifyTokenView, PortfolioHistoryView, ClosePositionView,
-    PortfolioPercentagesView
+    PortfolioPercentagesView, SignalDollarView
 )
 
 router = DefaultRouter()
@@ -20,7 +20,9 @@ urlpatterns = [
     path('assets/close-position/', ClosePositionView.as_view(), name='close-position'),
     path('history/', PortfolioHistoryView.as_view(), name='portfolio-history'),
     path('portfolio-percentages/', PortfolioPercentagesView.as_view(), name='portfolio-percentages'),
+    path('signal-dollar/', SignalDollarView.as_view(), name='signal-dollar'),
     path('auth/login/', LoginView.as_view(), name='auth-login'),
     path('auth/verify/', VerifyTokenView.as_view(), name='auth-verify'),
     path('', include(router.urls)),
 ]
+

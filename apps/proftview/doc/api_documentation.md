@@ -453,3 +453,59 @@ curl -X GET http://localhost:8000/api/proftview/portfolio-percentages/
   ]
 }
 ```
+
+---
+
+## 7. Señales de Estrategia Dólar (Signal Dollar Bot) [PÚBLICO - GET]
+
+Proporciona la serie de datos históricos de la TRM (USD/COP) en Colombia obtenida desde `datos.gov.co`, calculando los indicadores de la estrategia `signal_dollar_bot` (`zscore` de 10 periodos y Banda de Bollinger Inferior `BB_low` a 2 desviaciones estándar) y generando las señales de compra cuando se cumplen las condiciones de entrada.
+
+### Obtener Señales Dólar
+**Endpoint:** `GET /signal-dollar/`
+
+**Descripción del Contenido:**
+La respuesta devuelve un JSON con tres listas de registros correspondientes a diferentes marcos temporales:
+- `historical`: Toda la serie histórica disponible.
+- `last_year`: Los datos correspondientes al último año (últimos 365 días).
+- `last_month`: Los datos correspondientes al último mes (últimos 30 días).
+
+**Ejemplo de Llamado:**
+```bash
+curl -X GET http://localhost:8000/api/proftview/signal-dollar/
+```
+
+**Ejemplo de Respuesta:**
+```json
+{
+  "historical": [
+    {
+      "date": "2020-01-02",
+      "close": 3277.1,
+      "zscore": null,
+      "bb_low": null,
+      "buy_signal": false
+    },
+    ...
+  ],
+  "last_year": [
+    ...
+  ],
+  "last_month": [
+    {
+      "date": "2026-04-14",
+      "close": 3608.1,
+      "zscore": -2.03,
+      "bb_low": 3611.17,
+      "buy_signal": true
+    },
+    {
+      "date": "2026-04-15",
+      "close": 3645.2,
+      "zscore": -1.21,
+      "bb_low": 3610.05,
+      "buy_signal": false
+    }
+  ]
+}
+```
+
