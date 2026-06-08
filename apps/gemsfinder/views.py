@@ -1,5 +1,9 @@
 from rest_framework import generics, permissions
-from .models import GemScrapperTactics, SelectedAsset, CompetitorAsset
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django_q.tasks import async_task
+from .models import GemScrapperTactics, SelectedAsset, CompetitorAsset, ScrapingSession
 from .serializers import (
     GemScrapperTacticsSerializer, 
     SelectedAssetSerializer, 
@@ -47,3 +51,31 @@ class CompetitorAssetListView(generics.ListAPIView):
             queryset = queryset.filter(target_asset_id=target_id)
             
         return queryset
+
+
+class RunScreenerView(APIView):
+    """
+    Manually triggers the GemsFinder screener script for all active tactics.
+    Restricted to admin (staff) users only.
+    The script runs asynchronously in the background via Django-Q.
+    """
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, *args, **kwargs):
+        active_tactics = GemScrapperTactics.objects.filter(active=True)
+        if not active_tactics.exists():
+            return Response(
+                {"detail": "No active tactics found. Nothing to run."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        task_id = async_task('apps.gemsfinder.funcs.run_sts.run_st')
+
+        return Response(
+            {
+                "detail": "GemsFinder screener has been queued successfully.",
+                "task_id": task_id,
+                "active_tactics": list(active_tactics.values_list('name', flat=True)),
+            },
+            status=status.HTTP_202_ACCEPTED
+        )

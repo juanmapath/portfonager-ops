@@ -102,3 +102,43 @@ The `raw_metrics` field contains the original scraped data from Finviz. For `Sel
 ### Weights
 *   `overall_weights`: Relative importance of Value, Quality, and Trend groups.
 *   `value_weights`, `quality_weights`, `trend_weights`: Importance of specific metrics within each group.
+
+---
+
+## 4. Run Screener (Manual Trigger)
+Manually triggers the GemsFinder screener script for all active tactics. The script runs asynchronously in the background via Django-Q so the HTTP response returns immediately.
+
+> **⚠️ Admin only** — requires Django admin/staff credentials. Returns `403 Forbidden` for non-admin users.
+
+*   **Endpoint:** `/run-screener/`
+*   **Method:** `POST`
+*   **Authentication:** Required — Django Session Auth or Basic Auth. The authenticated user **must be `is_staff = True`**.
+*   **Request Body:** None required (empty POST).
+
+### Success Response — `202 Accepted`
+```json
+{
+    "detail": "GemsFinder screener has been queued successfully.",
+    "task_id": "abc123-def456-...",
+    "active_tactics": ["Ockham", "Fortress", "Moonshot"]
+}
+```
+
+### Error Responses
+
+| Status | Reason |
+| :--- | :--- |
+| `401 Unauthorized` | No credentials provided. |
+| `403 Forbidden` | Authenticated user is not an admin/staff member. |
+| `400 Bad Request` | No active tactics are configured in the database. |
+
+### Example — cURL
+```bash
+curl -X POST https://<your-domain>/api/gemsfinder/run-screener/ \
+  -u admin_username:admin_password
+```
+
+### Notes
+- The endpoint enqueues the task via Django-Q. You can monitor progress in the **Django Admin → Django Q → Queued Tasks / Successful Tasks**.
+- The screener uses a headless Selenium browser to bypass Cloudflare protection on the production server.
+- Each active tactic will generate a new `ScrapingSession` record. Check the `/assets/?session=<id>` endpoint once the job completes.

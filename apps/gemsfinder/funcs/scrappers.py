@@ -7,9 +7,90 @@ import numpy as np
 import time
 import os
 import json
+import shutil
 from pathlib import Path
+
+# Selenium imports for headless browser scraping (bypasses Cloudflare in production)
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
 root_directory = Path(__file__).resolve().parent.parent.parent
 print(root_directory)
+
+
+def get_selenium_driver():
+    """Creates and returns a headless Chrome/Chromium driver.
+    Prioritizes system-installed Chromium (used by Nixpacks/Coolify in production).
+    Falls back to webdriver-manager for local development.
+    """
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=1920,1080')
+    # Spoof a real browser User-Agent to avoid detection
+    options.add_argument(
+        'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+    )
+    # Suppress automation flags
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
+    options.add_argument('--disable-blink-features=AutomationControlled')
+
+    system_chrome = shutil.which('chromium') or shutil.which('chromium-browser') or shutil.which('google-chrome')
+    system_chromedriver = shutil.which('chromedriver')
+
+    if system_chrome and system_chromedriver:
+        print(f"[Selenium] Using system Chromium: {system_chrome}")
+        options.binary_location = system_chrome
+        service = Service(executable_path=system_chromedriver)
+    else:
+        print("[Selenium] System Chrome not found, using ChromeDriverManager.")
+        from webdriver_manager.chrome import ChromeDriverManager
+        service = Service(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(service=service, options=options)
+    return driver
+
+
+def _fetch_html_with_selenium(driver, url, wait_for_selector='tr.styled-row', timeout=20):
+    """Navigates to a URL using an existing Selenium driver and returns the page HTML.
+    Waits until the expected selector is present before returning.
+    Returns None on failure.
+    """
+    try:
+        driver.get(url)
+        # Wait for data rows to appear (means the page loaded successfully)
+        WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector))
+        )
+        return driver.page_source
+    except Exception as e:
+        print(f"[Selenium] Failed to fetch {url}: {e}")
+        return None
+
+
+def _fetch_json_with_selenium(driver, url, timeout=20):
+    """Navigates to a JSON endpoint using Selenium and returns the parsed JSON dict.
+    Finviz's statement API returns raw JSON in a <pre> tag.
+    Returns None on failure.
+    """
+    try:
+        driver.get(url)
+        WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((By.TAG_NAME, 'pre'))
+        )
+        pre_text = driver.find_element(By.TAG_NAME, 'pre').text
+        return json.loads(pre_text)
+    except Exception as e:
+        print(f"[Selenium] Failed to fetch JSON from {url}: {e}")
+        return None
 
 def clean_float_list(values):
     cleaned = []
@@ -24,7 +105,7 @@ def clean_float_list(values):
     return cleaned
 
 
-def scrap_finviz_screener_costum(params_dict, top=False):
+def scrap_finviz_screener_costum(params_dict, top=False, driver=None):
     general_filters ={
     "cap":"cap_microover",
     "Price":"sh_price_o2",
@@ -111,10 +192,17 @@ def scrap_finviz_screener_costum(params_dict, top=False):
     }
 
     try:
-        response = requests.get(full_url, headers=headers)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        
+        if driver is not None:
+            html = _fetch_html_with_selenium(driver, full_url)
+            if html is None:
+                print("[Selenium] Failed to load screener page.")
+                return pd.DataFrame()
+            soup = BeautifulSoup(html, "html.parser")
+        else:
+            response = requests.get(full_url, headers=headers, timeout=15)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.content, "html.parser")
+
         total_div = soup.find('div', id="screener-total")
         if not total_div:
             print("No results found or could not find screener-total div.")
@@ -142,9 +230,16 @@ def scrap_finviz_screener_costum(params_dict, top=False):
                 pag_param = f"r={(pag-1)*2}1"
                 current_url = f"{full_url}&{pag_param}"
                 print(f"Scrapping page {pag} of {no_pages}: {current_url}")
-                response = requests.get(current_url, headers=headers)
-                response.raise_for_status()
-                soup = BeautifulSoup(response.content, "html.parser")
+                if driver is not None:
+                    html = _fetch_html_with_selenium(driver, current_url)
+                    if html is None:
+                        print(f"[Selenium] Failed to load page {pag}, skipping.")
+                        continue
+                    soup = BeautifulSoup(html, "html.parser")
+                else:
+                    response = requests.get(current_url, headers=headers, timeout=15)
+                    response.raise_for_status()
+                    soup = BeautifulSoup(response.content, "html.parser")
             else:
                 print(f"Scrapping page 1 of {no_pages}")
 
@@ -270,7 +365,7 @@ def scrap_finviz_screener(params_dict, top=False):
     
     try:
         # first round call
-        response = requests.get(first_call_url, headers=headers)
+        response = requests.get(first_call_url, headers=headers, timeout=15)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, "html.parser")
         rows = soup.find_all('tr', class_='styled-row')
@@ -306,7 +401,7 @@ def scrap_finviz_screener(params_dict, top=False):
             else:
                 pag_param = f"r={(pag-1)*2}1"
                 # first round call
-                response = requests.get(f"{first_call_url}&{pag_param}", headers=headers)
+                response = requests.get(f"{first_call_url}&{pag_param}", headers=headers, timeout=15)
                 response.raise_for_status()
                 soup = BeautifulSoup(response.content, "html.parser")
                 rows = soup.find_all('tr', class_='styled-row')
@@ -363,7 +458,7 @@ def scrap_finviz_screener(params_dict, top=False):
 
              #v131 -> ownership
             print("ownership")
-            response11 = requests.get(ownership_url, headers=headers)
+            response11 = requests.get(ownership_url, headers=headers, timeout=15)
             response11.raise_for_status()
             soup11 = BeautifulSoup(response11.content, "html.parser")
             rows11 = soup11.find_all('tr', class_='styled-row')
@@ -389,7 +484,7 @@ def scrap_finviz_screener(params_dict, top=False):
  
             #v161 -> valuation
             print("valuation")
-            response1 = requests.get(valuation_url, headers=headers)
+            response1 = requests.get(valuation_url, headers=headers, timeout=15)
             response1.raise_for_status()
             soup1 = BeautifulSoup(response1.content, "html.parser")
             rows1 = soup1.find_all('tr', class_='styled-row')
@@ -423,7 +518,7 @@ def scrap_finviz_screener(params_dict, top=False):
 
             #v161 -> financial
             print("finantial")
-            response2 = requests.get(finantial_url, headers=headers)
+            response2 = requests.get(finantial_url, headers=headers, timeout=15)
             response2.raise_for_status()
             soup2 = BeautifulSoup(response2.content, "html.parser")
             rows2 = soup2.find_all('tr', class_='styled-row')
@@ -468,7 +563,7 @@ def scrap_finviz_screener(params_dict, top=False):
 
             #v171 -> tecnical
             print("tecnical")
-            response3 = requests.get(tecnical_url, headers=headers)
+            response3 = requests.get(tecnical_url, headers=headers, timeout=15)
             response3.raise_for_status()
             soup3 = BeautifulSoup(response3.content, "html.parser")
             rows3 = soup3.find_all('tr', class_='styled-row')
@@ -524,8 +619,7 @@ def scrap_finviz_eps_series(ticker):
     }
 
     try:
-
-        response = requests.get(endpoint, headers=headers)
+        response = requests.get(endpoint, headers=headers, timeout=15)
         data = response.json()
         # Save the JSON data to local file
         local_json_path = os.path.join(root_directory, "dbs","statements", f"{ticker}_statement.json")
@@ -541,7 +635,7 @@ def scrap_finviz_eps_series(ticker):
         return False, None
 
 
-def update_finviz_metrics_series(ticker):
+def update_finviz_metrics_series(ticker, driver=None):
     from apps.botops.models import AssetSeries
     
     endpoint = f'https://finviz.com/api/statement.ashx?t={ticker}'
@@ -553,9 +647,15 @@ def update_finviz_metrics_series(ticker):
     }
 
     try:
-        response = requests.get(endpoint, headers=headers)
-        response.raise_for_status()
-        new_data_full = response.json()
+        if driver is not None:
+            new_data_full = _fetch_json_with_selenium(driver, endpoint)
+            if new_data_full is None:
+                print(f"[{ticker}] Selenium failed to retrieve statement JSON.")
+                return False, None
+        else:
+            response = requests.get(endpoint, headers=headers, timeout=15)
+            response.raise_for_status()
+            new_data_full = response.json()
         
         # Verify JSON
         if "data" not in new_data_full or "Period" not in new_data_full["data"]:
