@@ -78,6 +78,7 @@ class BotAssetAggregatedView(APIView):
             coms_sum=Sum('coms'),
             trades_sum=Sum('trades'),
             cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+            cap_lever_sum=Sum('cap_lever', filter=~Q(qty_open=0)),
             capAdded_sum=Sum('capAdded')
         )
 
@@ -93,7 +94,8 @@ class BotAssetAggregatedView(APIView):
         total_capital_added = capAdded_sum + cap_no_asignado_sum
         cap_value_in_trade_sum = aggs['cap_value_in_trade_sum'] or 0.0
         cap_to_trade_sum = aggs['cap_to_trade_sum'] or 0.0
-        total_cap_value = cap_value_in_trade_sum + cap_no_asignado_sum + cap_to_trade_sum+ cap_to_add_sum
+        cap_lever_sum = aggs['cap_lever_sum'] or 0.0
+        total_cap_value = (cap_value_in_trade_sum - cap_lever_sum) + cap_no_asignado_sum + cap_to_trade_sum+ cap_to_add_sum
 
         return Response({
             'cap_to_add_sum': cap_to_add_sum,
@@ -406,6 +408,7 @@ class PortfolioPercentagesView(APIView):
             cap_to_add_sum=Sum('cap_to_add'),
             cap_value_in_trade_sum=Sum('cap_value_in_trade', filter=~Q(qty_open=0)),
             cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+            cap_lever_sum=Sum('cap_lever', filter=~Q(qty_open=0)),
         )
         bot_aggs = Bot.objects.aggregate(
             cap_no_asignado_sum=Sum('cap_no_asignado')
@@ -415,8 +418,9 @@ class PortfolioPercentagesView(APIView):
         cap_value_in_trade_sum = asset_aggs['cap_value_in_trade_sum'] or 0.0
         cap_to_trade_sum = asset_aggs['cap_to_trade_sum'] or 0.0
         cap_no_asignado_sum = bot_aggs['cap_no_asignado_sum'] or 0.0
+        cap_lever_sum = asset_aggs['cap_lever_sum'] or 0.0
 
-        total_portfolio_value = cap_value_in_trade_sum + cap_no_asignado_sum + cap_to_trade_sum + cap_to_add_sum
+        total_portfolio_value = (cap_value_in_trade_sum - cap_lever_sum) + cap_no_asignado_sum + cap_to_trade_sum + cap_to_add_sum
 
         if total_portfolio_value == 0:
             return Response({'error': 'Total portfolio value is zero'}, status=400)
@@ -430,7 +434,7 @@ class PortfolioPercentagesView(APIView):
         for asset in asset_bots:
             # If qty_open != 0, use cap_value_in_trade, else use cap_to_trade
             if asset.qty_open != 0:
-                val = (asset.cap_value_in_trade or 0.0) + (asset.cap_to_add or 0.0)
+                val = (asset.cap_value_in_trade or 0.0) - (asset.cap_lever or 0.0) + (asset.cap_to_add or 0.0)
             else:
                 val = (asset.cap_to_trade or 0.0) + (asset.cap_to_add or 0.0)
             

@@ -135,7 +135,8 @@ def all_bots_hist():
     aggs = queryset.aggregate(
         cap_to_add_sum=Sum('cap_to_add'),
         cap_value_in_trade_sum=Sum('cap_value_in_trade', filter=~Q(qty_open=0)),
-        cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0))
+        cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+        cap_lever_sum=Sum('cap_lever', filter=~Q(qty_open=0))
     )
     
     cap_to_add_sum = aggs['cap_to_add_sum'] or 0.0
@@ -146,7 +147,8 @@ def all_bots_hist():
         cap_no_asignado_sum=Sum('cap_no_asignado')
     )['cap_no_asignado_sum'] or 0.0
     
-    total_cap_value = cap_value_in_trade_sum + cap_no_asignado_sum + cap_to_trade_sum + cap_to_add_sum
+    cap_lever_sum = aggs['cap_lever_sum'] or 0.0
+    total_cap_value = (cap_value_in_trade_sum - cap_lever_sum) + cap_no_asignado_sum + cap_to_trade_sum + cap_to_add_sum
     
     process_bot_history(None, date_today, spy_price, qqq_price, total_cap_value)
     print(f"Global History saved. Total Cap: {total_cap_value}")
@@ -156,13 +158,15 @@ def all_bots_hist():
         bot_aggs = BotAsset.objects.filter(bot=bot).aggregate(
             cap_to_add_sum=Sum('cap_to_add'),
             cap_value_in_trade_sum=Sum('cap_value_in_trade', filter=~Q(qty_open=0)),
-            cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0))
+            cap_to_trade_sum=Sum('cap_to_trade', filter=Q(qty_open=0)),
+            cap_lever_sum=Sum('cap_lever', filter=~Q(qty_open=0))
         )
         b_cap_to_add = bot_aggs['cap_to_add_sum'] or 0.0
         b_cap_in_trade = bot_aggs['cap_value_in_trade_sum'] or 0.0
         b_cap_to_trade = bot_aggs['cap_to_trade_sum'] or 0.0
+        b_cap_lever = bot_aggs['cap_lever_sum'] or 0.0
         
-        bot_total_cap = b_cap_in_trade + b_cap_to_trade + b_cap_to_add + bot.cap_no_asignado
+        bot_total_cap = (b_cap_in_trade - b_cap_lever) + b_cap_to_trade + b_cap_to_add + bot.cap_no_asignado
         
         process_bot_history(bot, date_today, spy_price, qqq_price, bot_total_cap)
         print(f"Bot '{bot.name}' History saved. Total Cap: {bot_total_cap}")

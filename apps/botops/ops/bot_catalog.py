@@ -213,7 +213,7 @@ def run_multi_strategy(BotAsset, operate=False):
                 new_op_price = ((prev_qty_open*prev_op_price) + (qty_to_add*new_close))/(prev_qty_open+qty_to_add)
                 new_coms = prev_coms + coms_per_trade
                 new_cap_value_in_trade = new_qty_open * new_close
-                new_cap_lever = (new_qty_open * new_op_price) - new_cap_to_trade if BotAsset.leverage > 1.0 else 0.0
+                new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
                 
                 if operate == True:
                     BotAsset.params3 = new_active_st_names
@@ -232,7 +232,7 @@ def run_multi_strategy(BotAsset, operate=False):
                 message_order += f'--> CURRENT {prev_qty_open}qty BUY\n'
                 message_order += f'--> New Cap {round(new_cap_value_in_trade,1)}USD\n'
                 message_order += f'--> Buy +{qty_to_add}qty BUY\n'
-                new_cap_lever = (prev_qty_open * prev_op_price) - prev_cap_to_trade if BotAsset.leverage > 1.0 else 0.0
+                new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
                 if operate == True:
                     BotAsset.cap_value_in_trade = new_cap_value_in_trade
                     BotAsset.cap_lever = new_cap_lever
@@ -299,7 +299,7 @@ def run_multi_strategy(BotAsset, operate=False):
         new_qty_open = round_down(leveraged_cap/new_close,4)
         new_cap_value_in_trade = new_qty_open * new_close
         new_op_price = new_close
-        new_cap_lever = (new_qty_open * new_op_price) - new_cap_to_trade if leverage > 1.0 else 0.0
+        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if leverage > 1.0 else 0.0
 
         if operate == True:
             BotAsset.params3 = new_active_st_names
@@ -406,7 +406,7 @@ def run_one_strategy(BotAsset, operate=False):
             message_order += f'Pos Value: {round(new_cap_value_in_trade,1)}USD\n'
             message_order += f'Pos pnl: {round(pnl_group,1)}USD\n'
             message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
-            new_cap_lever = (prev_qty_open * prev_op_price) - prev_cap_to_trade if BotAsset.leverage > 1.0 else 0.0
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
             if operate == True:
                 BotAsset.cap_value_in_trade = new_cap_value_in_trade
                 BotAsset.cap_lever = new_cap_lever
@@ -470,7 +470,7 @@ def run_one_strategy(BotAsset, operate=False):
         new_qty_open = round_down(leveraged_cap/new_close,4)
         new_cap_value_in_trade = new_qty_open * new_close
         new_op_price = new_close
-        new_cap_lever = (new_qty_open * new_op_price) - new_cap_to_trade if leverage > 1.0 else 0.0
+        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if leverage > 1.0 else 0.0
 
         if operate == True:
             BotAsset.position = new_pos
