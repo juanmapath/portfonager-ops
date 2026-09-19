@@ -2062,7 +2062,6 @@ def BondsRallying_v2(data, params):
 
 #combined strategies
 
-
 def zs_cross_dema_combox2(data,params):
     
     data = data.copy()
@@ -2107,7 +2106,6 @@ def zs_cross_dema_combox2(data,params):
     data.loc[window_size-1:, 'zdema_slope'] = slopes
 
 
-
     #RSI INDICATOR
     serie = data.copy()
     serie["change"]=serie["Close"].diff()
@@ -2123,8 +2121,10 @@ def zs_cross_dema_combox2(data,params):
   
     data["cond_signal_long1"]=np.where(((data["DEMA1"]>data["DEMA2"])&(data["zDEMA"]>1))|
                                       ((data["DEMA1"]>data["DEMA2"])&(data["zDEMA"]<1)&(data["zdema_slope"]>0)),True,False)
+    data["SignalType"]=np.where(data["cond_signal_long1"]==True,"trendfollowing","")
     data["cond_signal_long2"]=np.where((data["cond_signal_long1"]!=True)&
                                        (data["rsi"]<rsi_in),True,False) 
+    data["SignalType"]=np.where(data["cond_signal_long2"]==True,"meanreversion",data["SignalType"])
     data["cond_signal_long"]=np.where((data["cond_signal_long1"])|(data["cond_signal_long2"]), True, False)
     
     data["cond_signal_short"]=False

@@ -7,6 +7,7 @@ urlpatterns = [
     path('api/proftview/', include('apps.proftview.urls')),
     path('api/gemsfinder/', include('apps.gemsfinder.urls')),
     path('api/backtestlab/', include('apps.backtestlab.urls')),
+    path('api/research/', include('apps.research.urls')),
     # django admin
     path('admin/', admin.site.urls),
 ]

@@ -105,6 +105,7 @@ class BotAssetAggregatedView(APIView):
             'coms_sum': aggs['coms_sum'] or 0.0,
             'trades_sum': aggs['trades_sum'] or 0.0,
             'cap_to_trade_sum': aggs['cap_to_trade_sum'] or 0.0,
+            'cap_lever_sum': cap_lever_sum,
             'capAdded_sum': capAdded_sum,
             'cap_no_asignado': cap_no_asignado_sum,
             'total_capital_added': total_capital_added,

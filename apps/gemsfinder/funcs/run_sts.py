@@ -3,12 +3,21 @@ import time
 import os 
 import json
 import requests
+import django
 from pathlib import Path
 from datetime import datetime
 
 import pandas as pd
 import numpy as np
 from numpy import clip
+
+root_directory = Path(__file__).resolve().parent.parent.parent.parent
+
+if str(root_directory) not in sys.path:
+    sys.path.append(str(root_directory))
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+django.setup()
 
 from apps.gemsfinder.models import GemScrapperTactics, ScrapingSession, SelectedAsset, CompetitorAsset
 from apps.botops.models import AssetSeries

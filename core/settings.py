@@ -53,6 +53,7 @@ PROJECT_APPS = [
     'apps.proftview',
     'apps.gemsfinder',
     'apps.backtestlab',
+    'apps.research',
 ]
 
 

@@ -53,6 +53,19 @@ def get_selenium_driver():
     if system_chromedriver:
         print(f"[Selenium] Using system Chromedriver: {system_chromedriver}")
         kwargs["driver_executable_path"] = system_chromedriver
+    else:
+        # If no system chromedriver is forced, try to match the version of installed Chrome on Windows
+        if os.name == 'nt':
+            try:
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Google\Chrome\BLBeacon")
+                version, _ = winreg.QueryValueEx(key, "version")
+                if version:
+                    version_main = int(version.split('.')[0])
+                    kwargs["version_main"] = version_main
+                    print(f"[Selenium] Detected Chrome version {version}, using version_main={version_main}")
+            except Exception as e:
+                print(f"[Selenium] Could not detect Chrome version from registry: {e}")
 
     driver = uc.Chrome(**kwargs)
     return driver
@@ -251,10 +264,21 @@ def scrap_finviz_screener_costum(params_dict, top=False, driver=None):
                 
                 for i, key in enumerate(column_keys):
                     if i + offset < len(cols):
-                        val = cols[i+offset].get_text(strip=True)
+                        td_cell = cols[i+offset]
+                        if key == "ticker":
+                            val = td_cell.get('data-boxover-ticker')
+                            if not val:
+                                link = td_cell.find('a', class_='tab-link')
+                                if link:
+                                    val = link.get_text(strip=True)
+                                else:
+                                    val = td_cell.get_text(strip=True)
+                        else:
+                            val = td_cell.get_text(strip=True)
+
                         if val == "-":
                             val = None
-                        elif "%" in val:
+                        elif val and "%" in val:
                             val = val.replace("%", "").replace(",", "")
                         row_data[key] = val
                 
@@ -429,20 +453,24 @@ def scrap_finviz_screener(params_dict, top=False):
                 market_col = row.find_all('td')[6]
           
 
-                link = ticker_col.find('a') 
+                ticker_val = ticker_col.get('data-boxover-ticker')
+                if not ticker_val:
+                    link = ticker_col.find('a', class_='tab-link') or ticker_col.find('a')
+                    ticker_val = link.get_text(strip=True) if link else ticker_col.get_text(strip=True)
+
                 cn =  company_name_col.find('a')  
                 sc =  sector_col.find('a') 
                 ic =  industry_col.find('a') 
                 cc =  country_col.find('a')
                 mc = market_col.find('a')
 
-                if link:
-                    tickers.append(link.get_text())
-                    company_name.append(cn.get_text())
-                    sector.append(sc.get_text())
-                    industry.append(ic.get_text())
-                    country.append(cc.get_text())
-                    marketCap.append(mc.get_text())
+                if ticker_val:
+                    tickers.append(ticker_val)
+                    company_name.append(cn.get_text(strip=True) if cn else company_name_col.get_text(strip=True))
+                    sector.append(sc.get_text(strip=True) if sc else sector_col.get_text(strip=True))
+                    industry.append(ic.get_text(strip=True) if ic else industry_col.get_text(strip=True))
+                    country.append(cc.get_text(strip=True) if cc else country_col.get_text(strip=True))
+                    marketCap.append(mc.get_text(strip=True) if mc else market_col.get_text(strip=True))
                 
             df = pd.DataFrame(
                 {
