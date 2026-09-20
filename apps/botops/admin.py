@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Family, Bot, BotAsset, AssetSeries, Broker, GeneralSettings, Transaction, PortfolioHistory
+from .models import Family, Bot, BotAsset, AssetSeries, Broker, GeneralSettings, Transaction, PortfolioHistory, TradeHistory
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
@@ -21,7 +21,7 @@ class BotAdmin(admin.ModelAdmin):
 
 @admin.register(BotAsset)
 class BotAssetAdmin(admin.ModelAdmin):
-    list_display = ('id', 'asset','bot', 'operate', 'broker', 'qty_open', 'cap_to_trade', 'cap_value_in_trade', 'pnl_un')
+    list_display = ('id', 'asset','bot', 'operate', 'broker', 'qty_open', 'leverage', 'max_leverage', 'current_leverage', 'use_regimes', 'cap_to_trade', 'cap_value_in_trade', 'pnl_un')
     search_fields = ('asset', 'broker', 'bot__name')
     list_filter = ('operate', 'broker', 'bot__name', 'bot__family')
 
@@ -48,3 +48,11 @@ class PortfolioHistoryAdmin(admin.ModelAdmin):
     search_fields = ('bot__name',)
     list_filter = ('date', 'bot')
     ordering = ('-date',)
+
+@admin.register(TradeHistory)
+class TradeHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'assetbot', 'regime', 'pnl', 'position_side', 'leverage_applied', 'entry_price', 'exit_price', 'qty', 'exit_date')
+    search_fields = ('assetbot__asset', 'regime')
+    list_filter = ('regime', 'exit_date', 'assetbot__bot')
+    ordering = ('-exit_date', '-id')
+

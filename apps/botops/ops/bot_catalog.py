@@ -9,6 +9,7 @@ import ast
 import numpy as np 
 import io
 import requests
+from apps.botops.ops.regime_calculator import get_current_regime, calculate_dynamic_leverage_from_series
 
 
 root_directory = Path(__file__).resolve().parent.parent.parent.parent
@@ -20,7 +21,7 @@ from apps.botops.ops.candles_down import download_data, format_json_to_df
 from apps.botops.ops.indicators import *
 
 from apps.botops.ops.tgrm import send_to_telegram
-from apps.botops.models import AssetSeries
+from apps.botops.models import AssetSeries, TradeHistory
 #tools
 
 def check_last_ohlc_and_download_data(asset, apiToken, chatID):
@@ -141,6 +142,7 @@ def run_multi_strategy(BotAsset, operate=False):
 
     sts_sum_pos = 0
     new_active_st_names = []
+    all_data_st = []
     i=0
     for st in individual_sts_names:
         data = downloaded_df
@@ -157,6 +159,7 @@ def run_multi_strategy(BotAsset, operate=False):
         sts_sum_pos += new_pos
         if new_pos !=0:
             new_active_st_names.append(st)
+        all_data_st.append(data_st)
         i+=1
 
     ###################analizar estrategias agrupadas##################
@@ -188,6 +191,21 @@ def run_multi_strategy(BotAsset, operate=False):
 
     change_side = False
 
+    # ── Régimen Macro y Apalancamiento Dinámico sobre Serie Histórica ──
+    current_regime = None
+    if getattr(BotAsset, 'use_regimes', False):
+        effective_leverage, current_regime, pf, n_trades = calculate_dynamic_leverage_from_series(
+            data_st_list=all_data_st,
+            downloaded_df=downloaded_df,
+            apiToken=apiToken,
+            chatID=chatID,
+            max_leverage=BotAsset.max_leverage
+        )
+        pf_str = f"{pf:.2f}" if pf != float('inf') else "Inf"
+        message_order += f'Regime: {current_regime} | HistTrades: {n_trades} | PF: {pf_str} | Lever: {effective_leverage:.2f}x\n'
+    else:
+        effective_leverage = BotAsset.leverage
+
     if (prev_pos_gp == new_pos_gp):
         if prev_pos_gp == 0:
             message_order += f'No position -> KEEP\n'
@@ -206,14 +224,14 @@ def run_multi_strategy(BotAsset, operate=False):
                 new_cap_to_add = 0
                 
                 leverage = BotAsset.leverage
-                leveraged_cap_to_add = prev_cap_to_add * leverage
+                leveraged_cap_to_add = prev_cap_to_add * effective_leverage
                 qty_to_add = round_up(leveraged_cap_to_add/new_close,4)
                 
                 new_qty_open = prev_qty_open + qty_to_add
                 new_op_price = ((prev_qty_open*prev_op_price) + (qty_to_add*new_close))/(prev_qty_open+qty_to_add)
                 new_coms = prev_coms + coms_per_trade
                 new_cap_value_in_trade = new_qty_open * new_close
-                new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
+                new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if effective_leverage > 1.0 else 0.0
                 
                 if operate == True:
                     BotAsset.params3 = new_active_st_names
@@ -270,6 +288,31 @@ def run_multi_strategy(BotAsset, operate=False):
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
             BotAsset.updated_date = today
+            # Registrar trade completado en TradeHistory y stats1
+            if current_regime is not None or getattr(BotAsset, 'use_regimes', False):
+                try:
+                    TradeHistory.objects.create(
+                        assetbot=BotAsset,
+                        regime=current_regime if current_regime else 'default',
+                        pnl=round(new_pnl, 4),
+                        position_side=prev_pos_gp,
+                        entry_price=prev_op_price,
+                        exit_price=new_close,
+                        qty=prev_qty_open,
+                        leverage_applied=getattr(BotAsset, 'current_leverage', 1.0),
+                        exit_date=today.date() if hasattr(today, 'date') else timezone.now().date(),
+                    )
+                except Exception as e:
+                    print(f"Error creating TradeHistory: {e}")
+
+                trade_history = BotAsset.stats1 or []
+                trade_history.append({
+                    'regime': current_regime if current_regime else 'default',
+                    'pnl': round(new_pnl, 4),
+                    'date': str(today.date()),
+                })
+                BotAsset.stats1 = trade_history
+                BotAsset.current_leverage = 1.0  # reset al cerrar
             BotAsset.save() 
         
         message_order += f'Pos pnl: {round(prev_pnl_un,1)}USD\n'
@@ -295,11 +338,11 @@ def run_multi_strategy(BotAsset, operate=False):
         leverage = BotAsset.leverage
         new_cap_to_add = 0
         
-        leveraged_cap = new_cap_to_trade * leverage
+        leveraged_cap = new_cap_to_trade * effective_leverage
         new_qty_open = round_down(leveraged_cap/new_close,4)
         new_cap_value_in_trade = new_qty_open * new_close
         new_op_price = new_close
-        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if leverage > 1.0 else 0.0
+        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if effective_leverage > 1.0 else 0.0
 
         if operate == True:
             BotAsset.params3 = new_active_st_names
@@ -314,6 +357,7 @@ def run_multi_strategy(BotAsset, operate=False):
             BotAsset.pnl_un = 0
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
+            BotAsset.current_leverage = effective_leverage
             BotAsset.updated_date = today
             BotAsset.save() 
         
@@ -397,6 +441,21 @@ def run_one_strategy(BotAsset, operate=False):
     message_order += f'{bot_asset_id}-{asset} -- TotPNL: ${prev_pnl}\n' 
     message_order += f'-> {broker} \n'
 
+    # ── Régimen Macro y Apalancamiento Dinámico sobre Serie Histórica ──
+    current_regime = None
+    if getattr(BotAsset, 'use_regimes', False):
+        effective_leverage, current_regime, pf, n_trades = calculate_dynamic_leverage_from_series(
+            data_st_list=[data_st],
+            downloaded_df=downloaded_df,
+            apiToken=apiToken,
+            chatID=chatID,
+            max_leverage=BotAsset.max_leverage
+        )
+        pf_str = f"{pf:.2f}" if pf != float('inf') else "Inf"
+        message_order += f'Regime: {current_regime} | HistTrades: {n_trades} | PF: {pf_str} | Lever: {effective_leverage:.2f}x\n'
+    else:
+        effective_leverage = BotAsset.leverage
+
     change_side = False
 
     if (prev_pos == new_pos):
@@ -442,6 +501,31 @@ def run_one_strategy(BotAsset, operate=False):
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
             BotAsset.updated_date = today
+            # Registrar trade completado en TradeHistory y stats1
+            if current_regime is not None or getattr(BotAsset, 'use_regimes', False):
+                try:
+                    TradeHistory.objects.create(
+                        assetbot=BotAsset,
+                        regime=current_regime if current_regime else 'default',
+                        pnl=round(new_pnl, 4),
+                        position_side=prev_pos,
+                        entry_price=prev_op_price,
+                        exit_price=new_close,
+                        qty=prev_qty_open,
+                        leverage_applied=getattr(BotAsset, 'current_leverage', 1.0),
+                        exit_date=today.date() if hasattr(today, 'date') else timezone.now().date(),
+                    )
+                except Exception as e:
+                    print(f"Error creating TradeHistory: {e}")
+
+                trade_history = BotAsset.stats1 or []
+                trade_history.append({
+                    'regime': current_regime if current_regime else 'default',
+                    'pnl': round(new_pnl, 4),
+                    'date': str(today.date()),
+                })
+                BotAsset.stats1 = trade_history
+                BotAsset.current_leverage = 1.0  # reset al cerrar
             BotAsset.save() 
         
         message_order += f'Pos pnl: {round(prev_pnl_un,1)}USD\n'
@@ -466,11 +550,11 @@ def run_one_strategy(BotAsset, operate=False):
 
         leverage = BotAsset.leverage
         new_cap_to_add = 0
-        leveraged_cap = new_cap_to_trade * leverage 
+        leveraged_cap = new_cap_to_trade * effective_leverage 
         new_qty_open = round_down(leveraged_cap/new_close,4)
         new_cap_value_in_trade = new_qty_open * new_close
         new_op_price = new_close
-        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if leverage > 1.0 else 0.0
+        new_cap_lever = max(0.0, (new_qty_open * new_op_price) - new_cap_to_trade) if effective_leverage > 1.0 else 0.0
 
         if operate == True:
             BotAsset.position = new_pos
@@ -484,6 +568,7 @@ def run_one_strategy(BotAsset, operate=False):
             BotAsset.pnl_un = 0
             BotAsset.trades = new_trades
             BotAsset.coms = new_coms
+            BotAsset.current_leverage = effective_leverage
             BotAsset.updated_date = today
             BotAsset.save() 
         
@@ -737,6 +822,7 @@ def one_strategy_cross_assets(BotAsset, operate=False):
 
     message_order += f'________________\n'
     return message_order
+
 
 def signal_dollar_bot(BotAsset, operate=False):
     url_trm = "https://www.datos.gov.co/api/views/ceyp-9c7c/rows.csv?accessType=DOWNLOAD"

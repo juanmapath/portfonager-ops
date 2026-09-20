@@ -58,6 +58,9 @@ class BotAsset(models.Model):
     position = models.IntegerField(default=0)
     qty_open = models.FloatField(default=0.0)
     leverage = models.FloatField(default=1.0)
+    max_leverage = models.FloatField(default=1.0)
+    current_leverage = models.FloatField(default=1.0)
+    use_regimes = models.BooleanField(default=False)
     cap_lever = models.FloatField(default=0.0)
     cap_to_trade = models.FloatField(default=0.0)
     cap_to_add = models.FloatField(default=0.0)
@@ -123,4 +126,21 @@ class PortfolioHistory(models.Model):
 
     def __str__(self):
         return f"{self.date} - {'Total' if not self.bot else self.bot.name} - {self.capital}"
+
+class TradeHistory(models.Model):
+    assetbot = models.ForeignKey(BotAsset, on_delete=models.CASCADE, related_name='trade_histories')
+    regime = models.CharField(max_length=50, default='default')
+    signal_type = models.CharField(max_length=100, null=True, blank=True)
+    pnl = models.FloatField(default=0.0)
+    position_side = models.IntegerField(default=1)  # 1 for Long, -1 for Short
+    entry_price = models.FloatField(default=0.0)
+    exit_price = models.FloatField(default=0.0)
+    qty = models.FloatField(default=0.0)
+    leverage_applied = models.FloatField(default=1.0)
+    entry_date = models.DateField(null=True, blank=True)
+    exit_date = models.DateField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.assetbot.asset} - {self.regime} - PNL: ${self.pnl}"
 

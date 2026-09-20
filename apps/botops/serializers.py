@@ -1,12 +1,19 @@
 from rest_framework import serializers
-from .models import Family, Bot, BotAsset, AssetSeries, Broker
+from .models import Family, Bot, BotAsset, AssetSeries, Broker, TradeHistory
 
 class BrokerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Broker
         fields = '__all__'
 
+class TradeHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TradeHistory
+        fields = '__all__'
+
 class BotAssetSerializer(serializers.ModelSerializer):
+    trade_histories = TradeHistorySerializer(many=True, read_only=True)
+
     class Meta:
         model = BotAsset
         fields = '__all__'
