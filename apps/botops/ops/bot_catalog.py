@@ -174,12 +174,11 @@ def run_multi_strategy(BotAsset, operate=False):
     ###################operar estrategia agrupada##################
 
     current_position_value = prev_qty_open * new_close
-    position_cost = prev_qty_open * prev_op_price
 
     if prev_pos_gp == 1:
-        pnl_group = current_position_value - position_cost - coms_per_trade
+        pnl_group = prev_qty_open * (new_close - prev_op_price)
     elif prev_pos_gp == -1:
-        pnl_group = position_cost - current_position_value - coms_per_trade
+        pnl_group = prev_qty_open * (prev_op_price - new_close)
     else:
         pnl_group = 0
 
@@ -250,15 +249,16 @@ def run_multi_strategy(BotAsset, operate=False):
                 message_order += f'--> CURRENT {prev_qty_open}qty BUY\n'
                 message_order += f'--> New Cap {round(new_cap_value_in_trade,1)}USD\n'
                 message_order += f'--> Buy +{qty_to_add}qty BUY\n'
-                new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
-                if operate == True:
-                    BotAsset.cap_value_in_trade = new_cap_value_in_trade
-                    BotAsset.cap_lever = new_cap_lever
-                    BotAsset.pnl_un = pnl_group
-                    BotAsset.last_price = new_close
-                    BotAsset.updated_date = today
-                    BotAsset.save()
-                message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
+            
+            # Actualizar siempre precio y PnL no realizado en DB para reflejar estado en vivo
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if effective_leverage > 1.0 else 0.0
+            BotAsset.cap_value_in_trade = new_cap_value_in_trade
+            BotAsset.cap_lever = new_cap_lever
+            BotAsset.pnl_un = pnl_group
+            BotAsset.last_price = new_close
+            BotAsset.updated_date = today
+            BotAsset.save()
+            message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
      
 
     #si cierra largo o corto
@@ -426,12 +426,11 @@ def run_one_strategy(BotAsset, operate=False):
     new_pos, new_close, _ , data_st = strategy_functions[nombre](data, params)  
     
     current_position_value = prev_qty_open * new_close
-    position_cost = prev_qty_open * prev_op_price
 
     if prev_pos == 1:
-        pnl_group = current_position_value - position_cost - coms_per_trade
+        pnl_group = prev_qty_open * (new_close - prev_op_price)
     elif prev_pos == -1:
-        pnl_group = position_cost - current_position_value - coms_per_trade
+        pnl_group = prev_qty_open * (prev_op_price - new_close)
     else:
         pnl_group = 0
 
@@ -465,14 +464,15 @@ def run_one_strategy(BotAsset, operate=False):
             message_order += f'Pos Value: {round(new_cap_value_in_trade,1)}USD\n'
             message_order += f'Pos pnl: {round(pnl_group,1)}USD\n'
             message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
-            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
-            if operate == True:
-                BotAsset.cap_value_in_trade = new_cap_value_in_trade
-                BotAsset.cap_lever = new_cap_lever
-                BotAsset.pnl_un = pnl_group
-                BotAsset.last_price = new_close
-                BotAsset.updated_date = today
-                BotAsset.save()
+            
+            # Actualizar siempre precio y PnL no realizado en DB para reflejar estado en vivo
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if effective_leverage > 1.0 else 0.0
+            BotAsset.cap_value_in_trade = new_cap_value_in_trade
+            BotAsset.cap_lever = new_cap_lever
+            BotAsset.pnl_un = pnl_group
+            BotAsset.last_price = new_close
+            BotAsset.updated_date = today
+            BotAsset.save()
      
 
     #si cierra largo o corto
@@ -628,8 +628,8 @@ def follow_price_update_pos(BotAsset, operate=False):
 
     new_pos = 1
     new_close = downloaded_df['Close'].iloc[-1]
-    new_cap_value_in_trade = prev_qty_open*new_close
-    pnl_group = new_cap_value_in_trade - prev_cap_to_trade
+    new_cap_value_in_trade = prev_qty_open * new_close
+    pnl_group = prev_qty_open * (new_close - prev_op_price) if prev_op_price > 0 else 0.0
     
     message_order = ""
     message_order += f'{bot_asset_id}-{asset} -- TotUnrPNL: ${pnl_group}\n' 
@@ -638,12 +638,13 @@ def follow_price_update_pos(BotAsset, operate=False):
     message_order += f'Pos pnl: {round(pnl_group,1)}USD\n'
     message_order += f'________________\n'
 
-    if operate == True:
-        BotAsset.cap_value_in_trade = new_cap_value_in_trade
-        BotAsset.last_price = new_close
-        BotAsset.pnl_un = pnl_group
-        BotAsset.updated_date = today
-        BotAsset.save() 
+    new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
+    BotAsset.cap_value_in_trade = new_cap_value_in_trade
+    BotAsset.cap_lever = new_cap_lever
+    BotAsset.last_price = new_close
+    BotAsset.pnl_un = pnl_group
+    BotAsset.updated_date = today
+    BotAsset.save() 
            
     return message_order
 
@@ -722,7 +723,12 @@ def one_strategy_cross_assets(BotAsset, operate=False):
     new_close = df_operate['Close'].iloc[-1]
     
     new_cap_value_in_trade = prev_qty_open * new_close
-    pnl_group = new_cap_value_in_trade - prev_cap_to_trade - coms_per_trade
+    if prev_pos == 1:
+        pnl_group = prev_qty_open * (new_close - prev_op_price)
+    elif prev_pos == -1:
+        pnl_group = prev_qty_open * (prev_op_price - new_close)
+    else:
+        pnl_group = 0
     
     message_order = ""
     message_order += f'{bot_asset_id}-{asset_to_operate} (Sig:{asset_signals}) -- TotPNL: ${prev_pnl}\n' 
@@ -737,24 +743,25 @@ def one_strategy_cross_assets(BotAsset, operate=False):
             message_order += f'Pos Value: {round(new_cap_value_in_trade,1)}USD\n'
             message_order += f'Pos pnl: {round(pnl_group,1)}USD\n'
             message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
-            if operate == True:
-                BotAsset.cap_value_in_trade = new_cap_value_in_trade
-                BotAsset.pnl_un = pnl_group
-                BotAsset.last_price = new_close
-                BotAsset.updated_date = today
-                BotAsset.save()
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if BotAsset.leverage > 1.0 else 0.0
+            BotAsset.cap_value_in_trade = new_cap_value_in_trade
+            BotAsset.cap_lever = new_cap_lever
+            BotAsset.pnl_un = pnl_group
+            BotAsset.last_price = new_close
+            BotAsset.updated_date = today
+            BotAsset.save()
 
     # si cierra largo o corto
     if ((prev_pos != 0) & (new_pos != prev_pos)):
 
-        new_pnl = pnl_group 
+        new_pnl = pnl_group - coms_per_trade 
         new_pnl_un = 0
         new_op_price = new_close
         new_trades = prev_trades + 0.5
         new_coms = prev_coms + coms_per_trade
         new_position = 0
         new_qty_open = 0
-        new_cap_to_trade = new_cap_value_in_trade - coms_per_trade
+        new_cap_to_trade = prev_cap_to_trade + new_pnl
         new_cap_value_in_trade = 0
      
         if operate == True:
