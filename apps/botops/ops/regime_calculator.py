@@ -156,7 +156,7 @@ def calculate_dynamic_leverage_from_series(data_st_list, downloaded_df, apiToken
     """
     Opción A:
     1. Obtiene la serie histórica de regímenes macro (HYG/LQD, DXY, VIX).
-    2. Combina las señales históricas de las estrategias evaluadas.
+    2. Combina las señales históricas de las estrategias evaluadas alineando por fecha exacta.
     3. Extrae todos los trades históricos completados sobre las 4,000 velas descargadas.
     4. Identifica el régimen de hoy y calcula el Profit Factor (PF) histórico de ese régimen.
     5. Aplica la regla matemática de xmain.py para determinar el apalancamiento efectivo:
@@ -167,106 +167,120 @@ def calculate_dynamic_leverage_from_series(data_st_list, downloaded_df, apiToken
     Returns:
         tuple: (effective_leverage: float, current_regime: str, running_pf: float, n_trades: int)
     """
-    df_macro = get_macro_regimes_df(apiToken, chatID)
-    if df_macro is None or df_macro.empty:
-        return 1.0, "default", 1.0, 0
+    try:
+        df_macro = get_macro_regimes_df(apiToken, chatID)
+        if df_macro is None or df_macro.empty:
+            return 1.0, "default", 1.0, 0
 
-    current_regime = df_macro["Regime"].iloc[-1]
+        current_regime = df_macro["Regime"].iloc[-1]
 
-    if not data_st_list or downloaded_df is None or downloaded_df.empty:
-        return 1.0, current_regime, 1.0, 0
+        if not data_st_list or downloaded_df is None or downloaded_df.empty:
+            return 1.0, current_regime, 1.0, 0
 
-    # 1. Combinar posiciones históricas de todas las estrategias (MultiStrategy o OneStrategy)
-    # Cada data_st tiene la columna 'position' (1, -1, 0)
-    pos_dfs = []
-    for d in data_st_list:
-        if d is not None and 'position' in d.columns:
-            pos_dfs.append(d['position'].fillna(0).astype(int))
+        # 1. Base alineada por fecha a partir de downloaded_df
+        df_aligned = pd.DataFrame({
+            'Date': pd.to_datetime(downloaded_df['Date']),
+            'Close': downloaded_df['Close'].astype(float)
+        })
+        df_aligned['date_str'] = df_aligned['Date'].dt.strftime('%Y-%m-%d')
 
-    if not pos_dfs:
-        return 1.0, current_regime, 1.0, 0
+        # 2. Alinear cada estrategia sobre df_aligned usando 'date_str'
+        # Evita cualquier error de discrepancia de longitud si las estrategias hicieron dropna()
+        pos_cols = []
+        for idx, d in enumerate(data_st_list):
+            if d is not None and 'position' in d.columns and 'Date' in d.columns:
+                tmp = pd.DataFrame({
+                    'date_str': pd.to_datetime(d['Date']).dt.strftime('%Y-%m-%d'),
+                    f'pos_{idx}': d['position'].fillna(0).astype(int)
+                })
+                tmp = tmp.drop_duplicates(subset=['date_str'])
+                df_aligned = df_aligned.merge(tmp, on='date_str', how='left')
+                df_aligned[f'pos_{idx}'] = df_aligned[f'pos_{idx}'].fillna(0).astype(int)
+                pos_cols.append(f'pos_{idx}')
 
-    sum_pos = sum(pos_dfs)
-    combined_pos = np.where(sum_pos > 0, 1, np.where(sum_pos < 0, -1, 0))
+        if not pos_cols:
+            return 1.0, current_regime, 1.0, 0
 
-    df_trades = pd.DataFrame({
-        'Date': pd.to_datetime(downloaded_df['Date']),
-        'Close': downloaded_df['Close'].astype(float),
-        'position': combined_pos
-    })
-    df_trades['date_str'] = df_trades['Date'].dt.strftime('%Y-%m-%d')
+        # Combinar posiciones agrupadas (MultiStrategy o OneStrategy)
+        sum_pos = df_aligned[pos_cols].sum(axis=1)
+        df_aligned['position'] = np.where(sum_pos > 0, 1, np.where(sum_pos < 0, -1, 0))
 
-    # 2. Alinear con regímenes por fecha
-    merged = df_trades.merge(df_macro[['date_str', 'Regime']], on='date_str', how='left')
-    merged['Regime'] = merged['Regime'].ffill().bfill().fillna('default')
+        # 3. Alinear con regímenes por fecha
+        merged = df_aligned.merge(df_macro[['date_str', 'Regime']], on='date_str', how='left')
+        merged['Regime'] = merged['Regime'].ffill().bfill().fillna('default')
 
-    # 3. Extraer trades históricos completados
-    completed_trades = []
-    in_position = False
-    entry_price = 0.0
-    entry_regime = 'default'
-    current_side = 0
+        # 4. Extraer trades históricos completados
+        completed_trades = []
+        in_position = False
+        entry_price = 0.0
+        entry_regime = 'default'
+        current_side = 0
 
-    for i in range(len(merged)):
-        pos = merged['position'].iloc[i]
-        price = merged['Close'].iloc[i]
-        regime = merged['Regime'].iloc[i]
+        for i in range(len(merged)):
+            pos = merged['position'].iloc[i]
+            price = merged['Close'].iloc[i]
+            regime = merged['Regime'].iloc[i]
 
-        if not in_position and pos != 0:
-            in_position = True
-            current_side = pos
-            entry_price = price
-            entry_regime = regime
-        elif in_position:
-            if pos != current_side:
-                # Trade completado
-                if entry_price > 0:
-                    if current_side == 1:
-                        pnl_ret = (price - entry_price) / entry_price
+            if not in_position and pos != 0:
+                in_position = True
+                current_side = pos
+                entry_price = price
+                entry_regime = regime
+            elif in_position:
+                if pos != current_side:
+                    # Trade completado
+                    if entry_price > 0:
+                        if current_side == 1:
+                            pnl_ret = (price - entry_price) / entry_price
+                        else:
+                            pnl_ret = (entry_price - price) / entry_price
+                        
+                        completed_trades.append({
+                            'regime': entry_regime,
+                            'pnl': pnl_ret,
+                        })
+
+                    if pos != 0:
+                        current_side = pos
+                        entry_price = price
+                        entry_regime = regime
                     else:
-                        pnl_ret = (entry_price - price) / entry_price
-                    
-                    completed_trades.append({
-                        'regime': entry_regime,
-                        'pnl': pnl_ret,
-                    })
+                        in_position = False
 
-                if pos != 0:
-                    current_side = pos
-                    entry_price = price
-                    entry_regime = regime
-                else:
-                    in_position = False
+        # 5. Filtrar trades históricos para el régimen actual de hoy
+        matching_trades = [t for t in completed_trades if t['regime'] == current_regime]
+        n_trades = len(matching_trades)
 
-    # 4. Filtrar trades históricos para el régimen actual de hoy
-    matching_trades = [t for t in completed_trades if t['regime'] == current_regime]
-    n_trades = len(matching_trades)
+        if n_trades >= 3:
+            gains = sum(t['pnl'] for t in matching_trades if t['pnl'] > 0)
+            losses = sum(abs(t['pnl']) for t in matching_trades if t['pnl'] <= 0)
+            
+            if losses > 0:
+                running_pf = gains / losses
+            elif gains > 0:
+                running_pf = float('inf')
+            else:
+                running_pf = 1.0
 
-    if n_trades >= 3:
-        gains = sum(t['pnl'] for t in matching_trades if t['pnl'] > 0)
-        losses = sum(abs(t['pnl']) for t in matching_trades if t['pnl'] <= 0)
-        
-        if losses > 0:
-            running_pf = gains / losses
-        elif gains > 0:
-            running_pf = float('inf')
+            if running_pf >= 2.5:
+                leverage_mult = 1.0
+            elif running_pf >= 1.5:
+                leverage_mult = 0.75
+            else:
+                leverage_mult = 0.0
         else:
             running_pf = 1.0
-
-        if running_pf >= 2.5:
-            leverage_mult = 1.0
-        elif running_pf >= 1.5:
-            leverage_mult = 0.75
-        else:
             leverage_mult = 0.0
-    else:
-        running_pf = 1.0
-        leverage_mult = 0.0
 
-    effective_leverage = round(1.0 + leverage_mult * (max_leverage - 1.0), 2)
+        effective_leverage = round(1.0 + leverage_mult * (max_leverage - 1.0), 2)
 
-    pf_display = f"{running_pf:.2f}" if running_pf != float('inf') else "Inf"
-    print(f"[DynLeverage HotCalc] Today's Regime '{current_regime}': {n_trades} hist trades, "
-          f"PF={pf_display}, mult={leverage_mult} -> Effective Leverage: {effective_leverage}x")
+        pf_display = f"{running_pf:.2f}" if running_pf != float('inf') else "Inf"
+        print(f"[DynLeverage HotCalc] Today's Regime '{current_regime}': {n_trades} hist trades, "
+              f"PF={pf_display}, mult={leverage_mult} -> Effective Leverage: {effective_leverage}x")
 
-    return effective_leverage, current_regime, running_pf, n_trades
+        return effective_leverage, current_regime, running_pf, n_trades
+
+    except Exception as e:
+        print(f"[DynLeverage HotCalc] ERROR: {e}")
+        return 1.0, "default", 1.0, 0
+
