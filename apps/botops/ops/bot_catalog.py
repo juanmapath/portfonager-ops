@@ -251,7 +251,7 @@ def run_multi_strategy(BotAsset, operate=False):
                 message_order += f'--> Buy +{qty_to_add}qty BUY\n'
             
             # Actualizar siempre precio y PnL no realizado en DB para reflejar estado en vivo
-            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if effective_leverage > 1.0 else 0.0
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade)
             BotAsset.cap_value_in_trade = new_cap_value_in_trade
             BotAsset.cap_lever = new_cap_lever
             BotAsset.pnl_un = pnl_group
@@ -466,7 +466,7 @@ def run_one_strategy(BotAsset, operate=False):
             message_order += f'--> KEEP {prev_qty_open}qty KEEP\n'
             
             # Actualizar siempre precio y PnL no realizado en DB para reflejar estado en vivo
-            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade) if effective_leverage > 1.0 else 0.0
+            new_cap_lever = max(0.0, (prev_qty_open * prev_op_price) - prev_cap_to_trade)
             BotAsset.cap_value_in_trade = new_cap_value_in_trade
             BotAsset.cap_lever = new_cap_lever
             BotAsset.pnl_un = pnl_group
