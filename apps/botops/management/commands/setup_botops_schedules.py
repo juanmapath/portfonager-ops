@@ -52,20 +52,23 @@ class Command(BaseCommand):
         hist_status = "Created" if created else "Updated"
         self.stdout.write(self.style.SUCCESS(f'{hist_status} schedule for {hist_schedule_name}'))
 
-        # Add daily finviz metrics update schedule at 19:00 (7 PM), Mon-Fri
-        finviz_schedule_name = 'Daily Finviz Metrics Update'
-        finviz_schedule, created = Schedule.objects.update_or_create(
-            name=finviz_schedule_name,
-            defaults={
-                'func': 'apps.gemsfinder.funcs.update_all_finviz_metrics.run_update',
-                'schedule_type': Schedule.CRON,
-                'cron': '0 19 * * 1-5',
-                'repeats': -1,
-                'timeout': 1800
-            }
-        )
-        finviz_status = "Created" if created else "Updated"
-        self.stdout.write(self.style.SUCCESS(f'{finviz_status} schedule for {finviz_schedule_name}'))
+        # Delete Daily Finviz Metrics Update schedule if exists
+        Schedule.objects.filter(name='Daily Finviz Metrics Update').delete()
+
+        # # Add daily finviz metrics update schedule at 19:00 (7 PM), Mon-Fri
+        # finviz_schedule_name = 'Daily Finviz Metrics Update'
+        # finviz_schedule, created = Schedule.objects.update_or_create(
+        #     name=finviz_schedule_name,
+        #     defaults={
+        #         'func': 'apps.gemsfinder.funcs.update_all_finviz_metrics.run_update',
+        #         'schedule_type': Schedule.CRON,
+        #         'cron': '0 19 * * 1-5',
+        #         'repeats': -1,
+        #         'timeout': 1800
+        #     }
+        # )
+        # finviz_status = "Created" if created else "Updated"
+        # self.stdout.write(self.style.SUCCESS(f'{finviz_status} schedule for {finviz_schedule_name}'))
 
         # Add weekly GemsFinder screener schedule - every Friday at 10 PM
         gems_schedule_name = 'Weekly GemsFinder Screener'
